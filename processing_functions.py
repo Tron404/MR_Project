@@ -1,5 +1,6 @@
 from MeshObject import *
 import pymeshlab
+import numpy as np
 
 def subdivide_shape(obj_path, subdivision_type, iterations=1, threshold=None):
     pymesh_set = pymeshlab.MeshSet()
@@ -19,15 +20,44 @@ def translate_to_barycenter(mesh: MeshObject) -> None:
     mesh.vedo_mesh.coordinates = mesh.vedo_mesh.coordinates - bary_center
     mesh.check_barycenter()
 
-def scale_mesh(mesh: MeshObject) -> None:
-    max_dim = np.max(mesh.bounding_box)
+def scale_mesh(mesh: MeshObject):
+    max_dim = mesh.vedo_mesh.bounds()
+    max_dim = np.max([max_dim[1]-max_dim[0], max_dim[3]-max_dim[2], max_dim[5]-max_dim[4]])
     mesh.vedo_mesh.coordinates /= max_dim
-    
+
+    return mesh
+
+def eigen_vectors(mesh: MeshObject):
+    coordinates = mesh.vedo_mesh.vertices
+    cov_matrix = np.cov(coordinates.T)
+
+    e_vals, e_vectors = np.linalg.eig(cov_matrix)
+
+    e_vectors = e_vectors[np.argsort(e_vals)[::-1][:3]]
+
+    return e_vectors
+
+def flip_mass(mesh: MeshObject):
+    centre_coordinates = mesh.vedo_mesh.cell_centers
+    f = np.sign(np.sum(np.sign(centre_coordinates) * (centre_coordinates ** 2), axis=0))
+    flip_transformation = np.zeros((3,3))
+    flip_transformation[0,0] = f[0]
+    flip_transformation[1,1] = f[1]
+    flip_transformation[2,2] = f[2]
+
+    mesh.vedo_mesh.coordinates = np.dot(mesh.vedo_mesh.coordinates, flip_transformation)
+
+    return mesh
 
 shape_path = "../ShapeDatabase_INFOMR"
 
-mesh = MeshObject(shape_path + "/" + "City/" + "m1662.obj", True)
+mesh = MeshObject(shape_path + "/" + "MultiSeat/" + "D00273.obj", True)
 translate_to_barycenter(mesh)
-scale_mesh(mesh)
-mesh.check_barycenter()
+
+e_vectors = eigen_vectors(mesh)
+
+mesh.vedo_mesh.coordinates = np.dot(mesh.vedo_mesh.coordinates, e_vectors)
+mesh = flip_mass(mesh)
+
+mesh = scale_mesh(mesh)
 mesh.show()

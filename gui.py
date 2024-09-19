@@ -41,8 +41,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.plt.show(mesh) # build the vedo rendering
 
     def dragEnterEvent(self, event: QtGui.QDragEnterEvent):
-        if event.mimeData().hasUrls():
-            event.acceptProposedAction()  # accept drag event iff it is a file with a path
+        if event.mimeData().hasUrls(): # accept drag event iff it is a file with a path
+            event.acceptProposedAction()  
         else:
             event.ignore()
 
