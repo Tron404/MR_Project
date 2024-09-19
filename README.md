@@ -22,3 +22,9 @@ pip install -r requirements.txt
 ```
 
 ## Running the code
+
+You can run the main part of the code using this code:
+
+```
+python main.py
+```
