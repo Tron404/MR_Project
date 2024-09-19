@@ -1,4 +1,4 @@
-from gui import *
+from g import *
 from MeshObject import *
 from processing_functions import *
 

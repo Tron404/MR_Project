@@ -42,10 +42,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def process(self):
         normalize_shape(self.mesh_obj)
-        self.plt.reset_camera()
+        self.plt.fly_to([0,0])
 
     def load_mesh_from_path(self, url):
         self.mesh_obj = self.mesh_obj.load_mesh(url)
+        self.plt.fly_to(self.mesh_obj.vedo_mesh.center_of_mass())
 
     def add_then_display(self):
         self.init_text.pos("top-left")
