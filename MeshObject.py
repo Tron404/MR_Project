@@ -3,18 +3,26 @@ import numpy as np
 from vedo import show, Plotter, Mesh
 
 class MeshObject:
-    def __init__(self, path_obj, visualize=False) -> None:
-        self.vedo_mesh: Mesh = vedo.load(path_obj)
-        self.vedo_mesh = self.vedo_mesh.color("grey").lw(1)
+    def __init__(self, path_obj=None, visualize=False) -> None:
+        if not path_obj:
+            return
+        
+        self.load_mesh(path_obj)
         self.visualize = visualize
         
-        # obj stats
-        self.class_type = path_obj.split("/")[2] # assume path is of form: ../ShapeFolder/Type/obj
-        self.face_type = self._determine_face_type()
-
         if self.visualize:
             self.create_visualisation()
-    
+
+    def load_mesh(self, path_obj):
+        self.vedo_mesh: Mesh = vedo.load(path_obj)
+        self.vedo_mesh = self.vedo_mesh.color("grey").lw(1)
+
+        # obj stats
+        self.class_type = path_obj.split("/")[-2] # assume path is of form: ../ShapeFolder/Type/obj
+        self.face_type = self._determine_face_type()
+
+        return self
+        
     @property
     def coordinates(self):
         return self.vedo_mesh.coordinates

@@ -25,9 +25,7 @@ def scale_mesh(mesh: MeshObject):
     max_dim = np.max([max_dim[1]-max_dim[0], max_dim[3]-max_dim[2], max_dim[5]-max_dim[4]])
     mesh.vedo_mesh.coordinates /= max_dim
 
-    return mesh
-
-def eigen_vectors(mesh: MeshObject):
+def _eigen_vectors(mesh: MeshObject):
     coordinates = mesh.vedo_mesh.vertices
     cov_matrix = np.cov(coordinates.T)
 
@@ -36,6 +34,11 @@ def eigen_vectors(mesh: MeshObject):
     e_vectors = e_vectors[np.argsort(e_vals)[::-1][:3]]
 
     return e_vectors
+
+def align_to_principal_axes(mesh: MeshObject):
+    eigen_vectors = _eigen_vectors(mesh)
+    mesh.vedo_mesh.coordinates = np.dot(mesh.vedo_mesh.coordinates, eigen_vectors)
+
 
 def flip_mass(mesh: MeshObject):
     centre_coordinates = mesh.vedo_mesh.cell_centers
@@ -47,17 +50,15 @@ def flip_mass(mesh: MeshObject):
 
     mesh.vedo_mesh.coordinates = np.dot(mesh.vedo_mesh.coordinates, flip_transformation)
 
-    return mesh
+def normalize_shape(mesh: MeshObject):
+    translate_to_barycenter(mesh)
+    align_to_principal_axes(mesh)
+    flip_mass(mesh)
+    scale_mesh(mesh)
 
-shape_path = "../ShapeDatabase_INFOMR"
+if __name__ == "__main__":
+    shape_path = "../ShapeDatabase_INFOMR"
 
-mesh = MeshObject(shape_path + "/" + "MultiSeat/" + "D00273.obj", True)
-translate_to_barycenter(mesh)
-
-e_vectors = eigen_vectors(mesh)
-
-mesh.vedo_mesh.coordinates = np.dot(mesh.vedo_mesh.coordinates, e_vectors)
-mesh = flip_mass(mesh)
-
-mesh = scale_mesh(mesh)
-mesh.show()
+    mesh = MeshObject(shape_path + "/" + "MultiSeat/" + "D00273.obj", True)
+    normalize_shape(mesh)
+    mesh.show()

@@ -3,19 +3,19 @@ from PySide6 import QtCore, QtWidgets, QtGui
 from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 from vedo import Plotter, Mesh, Text2D, printc
 import vedo
+from MeshObject import *
 import os
 
 # code based on example from vedo documentation on QT integration
 class MainWindow(QtWidgets.QMainWindow):
-
-
-    def __init__(self, parent=None):
+    def __init__(self, mesh_obj: MeshObject, parent=None):
         QtWidgets.QMainWindow.__init__(self, parent)
         self.create_window()
         self.setAcceptDrops(True)
 
         self.frame = QtWidgets.QFrame()
         self.layout = QtWidgets.QStackedLayout()
+        self.mesh_obj = mesh_obj
         
         # create vedo renderer and add objects and callbacks
         self.vtkWidget = QVTKRenderWindowInteractor(self.frame)
@@ -32,13 +32,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.show()
 
     def load_mesh_from_path(self, url):
-        vedo_mesh = vedo.Mesh(url).lw(1).color("grey")
-        return vedo_mesh
+        self.mesh_obj = self.mesh_obj.load_mesh(url)
 
-    def add_then_display(self, mesh):
+    def add_then_display(self):
         self.init_text.pos("top-left")
         self.plt.clear()
-        self.plt.show(mesh) # build the vedo rendering
+        self.plt.show(self.mesh_obj.vedo_mesh) # build the vedo rendering
 
     def dragEnterEvent(self, event: QtGui.QDragEnterEvent):
         if event.mimeData().hasUrls(): # accept drag event iff it is a file with a path
@@ -56,8 +55,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         file_path = mime_data[0].toLocalFile()  # local file path
 
-        mesh = self.load_mesh_from_path(file_path)
-        self.add_then_display(mesh)
+        self.load_mesh_from_path(file_path)
+        self.add_then_display()
 
         event.acceptProposedAction()
 
@@ -65,6 +64,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.resize(1366, 768)
 
     def onKeypress(self, evt):
+        print(self.mesh_obj.class_type)
         printc("You have pressed key:", evt.keypress, c='b')
         if evt.keypress=='q':
             self.plt.close()
