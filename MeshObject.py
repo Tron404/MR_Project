@@ -1,33 +1,57 @@
 import vedo
 import numpy as np
 from vedo import show, Plotter, Mesh
-from functools import partial
 
 class MeshObject:
     def __init__(self, path_obj, visualize=False) -> None:
         self.vedo_mesh: Mesh = vedo.load(path_obj)
         self.vedo_mesh = self.vedo_mesh.color("grey").lw(1)
         self.visualize = visualize
+        
+        # obj stats
+        self.class_type = path_obj.split("/")[2] # assume path is of form: ../ShapeFolder/Type/obj
+        self.face_type = self._determine_face_type()
 
         if self.visualize:
             self.create_visualisation()
+    
+    @property
+    def coordinates(self):
+        return self.vedo_mesh.coordinates
 
-    def compute_stats(self):
-        cell_t = set([cell_type[len(cell)] for cell in obj_mesh.cells])
-        stats[obj] = {
-            "class": class_type,
-            "nfaces":obj_mesh.ncells,
-            "nvertices":obj_mesh.nvertices,
-            "types_of_faces": cell_t,
-            "3D_bounding_box": obj_mesh.bounds() # more processing?
+    @property
+    def n_faces(self):
+        return self.vedo_mesh.ncells
+
+    @property
+    def n_vertices(self):
+        return self.vedo_mesh.nvertices
+    
+    @property
+    def bounding_box(self):
+        return self.vedo_mesh.bounds()
+
+    def _determine_face_type(self):
+        cell_type_map = {
+            3: "triangle",
+            4: "quad"
         }
 
+        cell_types = set([cell_type_map[len(cell)] for cell in self.vedo_mesh.cells])
+        return list(cell_types)[0] if len(cell_types) < 2 else "mixed"
+        
     def create_visualisation(self):
         self.plotter = Plotter()
         self.plotter += [self.vedo_mesh]
+
+    def check_barycenter(self):
+        # print(self.vedo_mesh.center_of_mass() - self.vedo_mesh.coordinates, self.vedo_mesh.center_of_mass())
+        # assert np.all((self.vedo_mesh.center_of_mass() - self.vedo_mesh.coordinates) > 0)
+        ...
 
     def show(self):
         if self.visualize:
             show(self.vedo_mesh, axes=1).close()
         else:
             print("Visualization not initialized")
+            exit(-1) # switch to throw error instead

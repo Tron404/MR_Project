@@ -14,7 +14,9 @@ args = arg_parse.parse_args()
 possible_shapes_path = os.path.join(shape_path, args.shape)
 random_shape = np.random.choice(os.listdir(possible_shapes_path))
 
-obj = vedo.load_obj(os.path.join(shape_path, args.shape, random_shape))[0]
+path = os.path.join(shape_path, args.shape, random_shape)
+path = "../ShapeDatabase_INFOMR/City/m1660.obj"
+obj = vedo.load_obj(path)[0]
 obj = obj.color("grey").lw(1)
 
 obj = obj.normalize()
