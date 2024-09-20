@@ -14,7 +14,7 @@ def subdivide_shape(obj_path, subdivision_type, iterations=1, threshold=None):
     subdivion_func(iterations=iterations)
 
     class_type, obj_name = obj_path.split("/")[-2:]
-    pymesh_set.save_current_mesh(f"../ShapeDatabase_INFOMR/{class_type}/" + f"subdivided_{obj_name}.obj")
+    pymesh_set.save_current_mesh(f"../ShapeDatabase_INFOMR_subdivided/{class_type}/" + f"subdivided_{obj_name}.obj")
 
 def translate_to_barycenter(mesh: MeshObject) -> None:
     bary_center = mesh.vedo_mesh.center_of_mass()
