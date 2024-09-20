@@ -1,20 +1,27 @@
+import vedo
 from MeshObject import *
 import pymeshlab
 import numpy as np
 
 ## ORDER IS IMPORTANT
-def subdivide_shape(obj_path, subdivision_type, iterations=1, threshold=None):
+def subdivide_shape(vedo_mesh, subdivision_type, threshold=None):
+    pymesh = vedo.utils.vedo2meshlab(vedo_mesh)
     pymesh_set = pymeshlab.MeshSet()
-    pymesh_set.load_new_mesh(obj_path)
+    pymesh_set.add_mesh(pymesh)
 
     match subdivision_type:
         case "midpoint":
             subdivion_func = pymesh_set.meshing_surface_subdivision_midpoint
+        case "loop":
+            subdivion_func = pymesh_set.meshing_surface_subdivision_loop
     
-    subdivion_func(iterations=iterations)
+    # face_number - number of faces
+    # vertex_number - number of vertices
+    while pymesh_set.current_mesh().vertex_number() < threshold:
+        subdivion_func(iterations=1)
 
-    class_type, obj_name = obj_path.split("/")[-2:]
-    pymesh_set.save_current_mesh(f"../ShapeDatabase_INFOMR_subdivided/{class_type}/" + f"subdivided_{obj_name}.obj")
+    return vedo.Mesh(pymesh_set.current_mesh())
+
 
 def translate_to_barycenter(mesh: MeshObject) -> None:
     bary_center = mesh.vedo_mesh.center_of_mass()
