@@ -5,6 +5,7 @@ from vedo import Plotter, Mesh, Text2D, printc
 import vedo
 from MeshObject import *
 import os
+from processing_functions import *
 
 # code based on example from vedo documentation on QT integration
 class MainWindow(QtWidgets.QMainWindow):
@@ -14,15 +15,24 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setAcceptDrops(True)
 
         self.frame = QtWidgets.QFrame()
-        self.layout = QtWidgets.QStackedLayout()
+        self.layout = QtWidgets.QVBoxLayout()
+        button_layout = QtWidgets.QHBoxLayout()
+        render_layout = QtWidgets.QStackedLayout()
         self.mesh_obj = mesh_obj
+
+        self.layout.addLayout(button_layout)
+        self.layout.addLayout(render_layout)
+
+        btn1 = QtWidgets.QPushButton("Normalize shape")
+        btn1.pressed.connect(self.process)
+        button_layout.addWidget(btn1)
         
         # create vedo renderer and add objects and callbacks
         self.vtkWidget = QVTKRenderWindowInteractor(self.frame)
         self.plt = Plotter(qt_widget=self.vtkWidget)
         self.cbid = self.plt.add_callback("key press", self.onKeypress)
         self.init_text = Text2D("Drag and drop a 3D mesh file to visualize it!", pos="center")
-        self.layout.addWidget(self.vtkWidget)
+        render_layout.addWidget(self.vtkWidget)
 
         self.frame.setLayout(self.layout)
         self.setCentralWidget(self.frame)
@@ -30,8 +40,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.plt.show(self.init_text)
         self.show()
 
+    def process(self):
+        normalize_shape(self.mesh_obj)
+        self.plt.fly_to([0,0])
+
     def load_mesh_from_path(self, url):
         self.mesh_obj = self.mesh_obj.load_mesh(url)
+        self.plt.fly_to(self.mesh_obj.vedo_mesh.center_of_mass())
 
     def add_then_display(self):
         self.init_text.pos("top-left")
@@ -75,6 +90,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
-    window = MainWindow()
+    window = MainWindow(MeshObject())
     app.aboutToQuit.connect(window.onClose)
     app.exec()

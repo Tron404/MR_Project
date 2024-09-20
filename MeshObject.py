@@ -18,7 +18,7 @@ class MeshObject:
         self.vedo_mesh = self.vedo_mesh.color("grey").lw(1)
 
         # obj stats
-        self.class_type = path_obj.split("/")[-2] # assume path is of form: ../ShapeFolder/Type/obj
+        self.class_type, self.name = path_obj.split("/")[-2:] # assume path is of form: ../ShapeFolder/Type/obj
         self.face_type = self._determine_face_type()
 
         return self
@@ -49,6 +49,7 @@ class MeshObject:
         return list(cell_types)[0] if len(cell_types) < 2 else "mixed"
         
     def create_visualisation(self):
+        vedo.settings.default_backend = "vtk"
         self.plotter = Plotter()
         self.plotter += [self.vedo_mesh]
 
