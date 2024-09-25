@@ -5,11 +5,11 @@ from vedo import Plotter, Mesh, Text2D, printc
 import vedo
 from MeshObject import *
 import os
-from processing_functions import *
+from Pipeline import *
 
 # code based on example from vedo documentation on QT integration
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, mesh_obj: MeshObject, parent=None):
+    def __init__(self, mesh_obj: MeshObject, pipeline: Pipeline, parent=None):
         QtWidgets.QMainWindow.__init__(self, parent)
         self.create_window()
         self.setAcceptDrops(True)
@@ -19,6 +19,7 @@ class MainWindow(QtWidgets.QMainWindow):
         button_layout = QtWidgets.QHBoxLayout()
         render_layout = QtWidgets.QStackedLayout()
         self.mesh_obj = mesh_obj
+        self.pipeline = pipeline
 
         self.layout.addLayout(button_layout)
         self.layout.addLayout(render_layout)
@@ -41,17 +42,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.show()
 
     def process(self):
-        normalize_shape(self.mesh_obj)
+        self.mesh_obj = self.pipeline.normalize_shape(self.mesh_obj)
+        self.plt.clear()
+        self.plt.show(self.mesh_obj)
         self.plt.fly_to([0,0])
 
     def load_mesh_from_path(self, url):
-        self.mesh_obj = self.mesh_obj.load_mesh(url)
-        self.plt.fly_to(self.mesh_obj.vedo_mesh.center_of_mass())
+        self.mesh_obj = MeshObject(url)
+        self.plt.fly_to(self.mesh_obj.center_of_mass())
 
     def add_then_display(self):
         self.init_text.pos("top-left")
         self.plt.clear()
-        self.plt.show(self.mesh_obj.vedo_mesh) # build the vedo rendering
+        self.plt.show(self.mesh_obj) # build the vedo rendering
 
     def dragEnterEvent(self, event: QtGui.QDragEnterEvent):
         if event.mimeData().hasUrls(): # accept drag event iff it is a file with a path

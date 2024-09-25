@@ -2,42 +2,35 @@ import vedo
 import numpy as np
 from vedo import show, Plotter, Mesh
 
-class MeshObject:
-    def __init__(self, path_obj=None, visualize=False) -> None:
+class MeshObject(Mesh):
+    def __init__(self, path_obj: any=None, visualize: bool=False, name: str="", class_type: str="") -> None:
         if not path_obj:
             return
         
-        self.load_mesh(path_obj)
+        super(MeshObject, self).__init__(path_obj)
+        self.set_mesh_colors()
         self.visualize = visualize
-        
-        if self.visualize:
-            self.create_visualisation()
-
-    def load_mesh(self, path_obj):
-        self.vedo_mesh: Mesh = vedo.load(path_obj)
-        self.vedo_mesh = self.vedo_mesh.color("grey").lw(1)
-
-        # obj stats
-        self.class_type, self.name = path_obj.split("/")[-2:] # assume path is of form: ../ShapeFolder/Type/obj
         self.face_type = self._determine_face_type()
+        self.name = name
+        self.class_type = class_type
 
-        return self
-        
-    @property
-    def coordinates(self):
-        return self.vedo_mesh.coordinates
-
+        if self.visualize:
+            self._create_visualisation()
+    
+    def set_mesh_colors(self):
+        self.color("grey").lw(1)
+    
     @property
     def n_faces(self):
-        return self.vedo_mesh.ncells
+        return self.ncells
 
     @property
     def n_vertices(self):
-        return self.vedo_mesh.nvertices
+        return self.nvertices
     
     @property
     def bounding_box(self):
-        return self.vedo_mesh.bounds()
+        return self.bounds()
 
     def _determine_face_type(self):
         cell_type_map = {
@@ -45,13 +38,15 @@ class MeshObject:
             4: "quad"
         }
 
-        cell_types = set([cell_type_map[len(cell)] for cell in self.vedo_mesh.cells])
-        return list(cell_types)[0] if len(cell_types) < 2 else "mixed"
+        cell_types = set([cell_type_map[len(cell)] for cell in self.cells])
+        ##### CHECK WHICH SHAPE THROWS ERROR
+        # return list(cell_types)[0] if len(cell_types) < 2 else "mixed"
+        return "triangle"
         
-    def create_visualisation(self):
+    def _create_visualisation(self):
         vedo.settings.default_backend = "vtk"
         self.plotter = Plotter()
-        self.plotter += [self.vedo_mesh]
+        self.plotter += [self]
 
     def check_barycenter(self):
         # print(self.vedo_mesh.center_of_mass() - self.vedo_mesh.coordinates, self.vedo_mesh.center_of_mass())
@@ -60,7 +55,8 @@ class MeshObject:
 
     def show(self):
         if self.visualize:
-            show(self.vedo_mesh, axes=1).close()
+            self.plotter.clear(deep=True)
+            show(self, axes=1).close()
         else:
             print("Visualization not initialized")
             exit(-1) # switch to throw error instead
