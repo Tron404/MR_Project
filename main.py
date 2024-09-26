@@ -1,6 +1,7 @@
 from gui import *
 from MeshObject import *
 from Pipeline import *
+import mesh_properties
 
 if __name__ == "__main__":
     pipeline_parameters = {
@@ -11,7 +12,6 @@ if __name__ == "__main__":
     
     app = QtWidgets.QApplication(sys.argv)
     mesh = MeshObject()
-    print(mesh.convexity)
     pipeline = Pipeline(pipeline_parameters=pipeline_parameters)
     gui = MainWindow(mesh, pipeline)
     app.aboutToQuit.connect(gui.onClose)

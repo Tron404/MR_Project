@@ -85,8 +85,9 @@ class Pipeline:
         cov_matrix = np.cov(coordinates.T)
 
         e_vals, e_vectors = np.linalg.eig(cov_matrix) # eigen vectors are normalized!!
+        e_vals = np.sort(e_vals)[::-1]
         e_vectors = e_vectors[np.argsort(e_vals)[::-1]] # sort e_vals from high to low then select their corresponding e vectors
-        e_vectors[-1] = np.cros(e_vectors[0], e_vectors[1])
+        e_vectors[-1] = np.cross(e_vectors[0], e_vectors[1])
 
         return e_vals, e_vectors
 
