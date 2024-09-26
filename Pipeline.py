@@ -84,15 +84,14 @@ class Pipeline:
         coordinates = mesh.vertices
         cov_matrix = np.cov(coordinates.T)
 
-        e_vals, e_vectors = np.linalg.eig(cov_matrix)
+        e_vals, e_vectors = np.linalg.eig(cov_matrix) # eigen vectors are normalized!!
+        e_vectors = e_vectors[np.argsort(e_vals)[::-1]] # sort e_vals from high to low then select their corresponding e vectors
+        e_vectors[-1] = np.cros(e_vectors[0], e_vectors[1])
 
-        # print(np.sort(e_vals)[::-1])
-        # e_vectors = e_vectors[np.argsort(e_vals)[::-1]]
-
-        return e_vectors
+        return e_vals, e_vectors
 
     def _align_to_principal_axes(self, mesh: MeshObject) -> None:
-        eigen_vectors = self._eigen_vectors(mesh)
+        _, eigen_vectors = self._eigen_vectors(mesh)
         mesh.coordinates = np.dot(mesh.coordinates, eigen_vectors)
 
         return mesh
