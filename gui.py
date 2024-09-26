@@ -33,19 +33,24 @@ class MainWindow(QtWidgets.QMainWindow):
         self.plt = Plotter(qt_widget=self.vtkWidget)
         self.cbid = self.plt.add_callback("key press", self.onKeypress)
         self.init_text = Text2D("Drag and drop a 3D mesh file to visualize it!", pos="center")
+        self.vertex_template = "Vertices={}"
+        self.face_template = "Faces={}"
+        self.vertex_text = Text2D(self.vertex_template, pos="top-right")
+        self.face_text = Text2D(self.face_template, pos="center-right")
         render_layout.addWidget(self.vtkWidget)
 
         self.frame.setLayout(self.layout)
         self.setCentralWidget(self.frame)
 
         self.plt.show(self.init_text)
+        self.plt.show(self.vertex_text)
+        self.plt.show(self.face_text)
         self.show()
 
     def process(self):
         self.mesh_obj = self.pipeline.normalize_shape(self.mesh_obj)
-        self.plt.clear()
-        self.plt.show(self.mesh_obj)
         self.plt.fly_to([0,0])
+        self.add_then_display()
 
     def load_mesh_from_path(self, url):
         self.mesh_obj = MeshObject(url)
@@ -53,6 +58,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def add_then_display(self):
         self.init_text.pos("top-left")
+        self.vertex_text = self.vertex_text.text(self.vertex_template.format(self.mesh_obj.n_vertices))
+        self.face_text = self.face_text.text(self.face_template.format(self.mesh_obj.n_faces))
+        print(self.mesh_obj.n_faces)
         self.plt.clear()
         self.plt.show(self.mesh_obj) # build the vedo rendering
 
