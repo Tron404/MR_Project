@@ -68,7 +68,8 @@ class MeshObject(Mesh):
     
     @property
     def convexity(self):
-        eigenvalues = Pipeline._eigen_vectors(self)
+        eigenvalues, _ = Pipeline._eigen_vectors(None, self)
+        print(eigenvalues)
         return None
     
     @property
