@@ -4,3 +4,5 @@ cpp*
 *.png
 *pickle
 *.csv
+/.venv
+env/
