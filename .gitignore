@@ -1,0 +1,6 @@
+shape_diameter/
+cpp*
+*.cpp
+*.png
+*pickle
+*.csv
