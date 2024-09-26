@@ -1,7 +1,0 @@
-/home/keddie/Desktop/2024-2025/MR/MR_Project/shape_diameter/libgdiam-1.0.3/build/CMakeFiles/libgdiam.dir
-/home/keddie/Desktop/2024-2025/MR/MR_Project/shape_diameter/libgdiam-1.0.3/build/CMakeFiles/edit_cache.dir
-/home/keddie/Desktop/2024-2025/MR/MR_Project/shape_diameter/libgdiam-1.0.3/build/CMakeFiles/rebuild_cache.dir
-/home/keddie/Desktop/2024-2025/MR/MR_Project/shape_diameter/libgdiam-1.0.3/build/CMakeFiles/list_install_components.dir
-/home/keddie/Desktop/2024-2025/MR/MR_Project/shape_diameter/libgdiam-1.0.3/build/CMakeFiles/install.dir
-/home/keddie/Desktop/2024-2025/MR/MR_Project/shape_diameter/libgdiam-1.0.3/build/CMakeFiles/install/local.dir
-/home/keddie/Desktop/2024-2025/MR/MR_Project/shape_diameter/libgdiam-1.0.3/build/CMakeFiles/install/strip.dir

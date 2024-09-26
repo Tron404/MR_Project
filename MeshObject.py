@@ -1,6 +1,6 @@
 import vedo
 import numpy as np
-import Pipeline
+# import Pipeline
 from vedo import show, Plotter, Mesh
 
 class MeshObject(Mesh):
