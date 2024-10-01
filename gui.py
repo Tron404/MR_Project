@@ -25,8 +25,36 @@ class MainWindow(QtWidgets.QMainWindow):
         self.layout.addLayout(render_layout)
 
         btn1 = QtWidgets.QPushButton("Normalize shape")
-        btn1.pressed.connect(self.process)
+        btn1.pressed.connect(self.normalize)
+
+        btn2 = QtWidgets.QPushButton("Resample faces of shape")
+        btn2.pressed.connect(self.resample_shape)
+        
+        btn3 = QtWidgets.QPushButton("Translate to\nbarycenter")
+        btn3.pressed.connect(self.translation_to_barycenter)
+        
+        btn4 = QtWidgets.QPushButton("Align to\nprincipal axes")
+        btn4.pressed.connect(self.align_to_axes)
+        
+        btn5 = QtWidgets.QPushButton("Flip shape")
+        btn5.pressed.connect(self.flip_mass)
+        
+        btn6 = QtWidgets.QPushButton("Scale shape")
+        btn6.pressed.connect(self.scale_mesh)
+
+        btn1.setFixedSize(QtCore.QSize(300,50))
+        btn2.setFixedSize(QtCore.QSize(300,50))
+        btn3.setFixedSize(QtCore.QSize(300,50))
+        btn4.setFixedSize(QtCore.QSize(300,50))
+        btn5.setFixedSize(QtCore.QSize(300,50))
+        btn6.setFixedSize(QtCore.QSize(300,50))
+
         button_layout.addWidget(btn1)
+        button_layout.addWidget(btn2)
+        button_layout.addWidget(btn3)
+        button_layout.addWidget(btn4)
+        button_layout.addWidget(btn5)
+        button_layout.addWidget(btn6)
         
         # create vedo renderer and add objects and callbacks
         self.vtkWidget = QVTKRenderWindowInteractor(self.frame)
@@ -47,10 +75,30 @@ class MainWindow(QtWidgets.QMainWindow):
         self.plt.show(self.face_text)
         self.show()
 
-    def process(self):
-        self.mesh_obj = self.pipeline.normalize_shape(self.mesh_obj)
-        self.plt.fly_to([0,0])
+    def _apply_transformation_on_shape(self, transformation, move_camera=False):
+        self.mesh_obj = transformation(self.mesh_obj)
+        if move_camera:
+            self.plt.fly_to([0,0])
         self.add_then_display()
+
+    def normalize(self):
+        self._apply_transformation_on_shape(self.pipeline.normalize_shape, move_camera=True)
+
+    def resample_shape(self):
+        self._apply_transformation_on_shape(self.pipeline._subdivide_shape)
+
+    def translation_to_barycenter(self):
+        self._apply_transformation_on_shape(self.pipeline._translate_to_barycenter, move_camera=True)
+    
+    ### create custom decorator for buttons?
+    def align_to_axes(self):
+        self._apply_transformation_on_shape(self.pipeline._align_to_principal_axes)
+
+    def flip_mass(self):
+        self._apply_transformation_on_shape(self.pipeline._flip_mass)
+
+    def scale_mesh(self):
+        self._apply_transformation_on_shape(self.pipeline._scale_mesh)
 
     def load_mesh_from_path(self, url):
         self.mesh_obj = MeshObject(url)

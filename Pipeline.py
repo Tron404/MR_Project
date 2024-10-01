@@ -34,6 +34,7 @@ class Pipeline:
         return " --> ".join(list(self._pipeline_components.keys()))
 
     def _subdivide_shape(self, vedo_mesh: MeshObject, subdivision_type: str="midpoint", threshold: float=100.0) -> MeshObject:
+        #### TODO ADD DECIMATION
         pymesh = vedo.utils.vedo2meshlab(vedo_mesh)
         pymesh_set = pymeshlab.MeshSet()
         pymesh_set.add_mesh(pymesh)
@@ -63,6 +64,15 @@ class Pipeline:
         vedo_mesh = MeshObject(pymesh_set.current_mesh(), vedo_mesh.visualize, **{"name": vedo_mesh.name, "class_type": vedo_mesh.class_type})
         return vedo_mesh
 
+    def recompute_normals(transformation):
+        def normals(*args, **kwargs):
+            # first check if normal calculation is needed?
+            mesh: MeshObject = transformation(*args, **kwargs)
+            mesh = mesh.compute_normals()
+            print(mesh.is_manifold())
+            return mesh
+        return normals
+
     def _translate_to_barycenter(self, mesh: MeshObject) -> MeshObject:
         bary_center = mesh.center_of_mass()
         mesh.coordinates = mesh.coordinates - bary_center
@@ -91,12 +101,14 @@ class Pipeline:
 
         return e_vals, e_vectors
 
+    @recompute_normals
     def _align_to_principal_axes(self, mesh: MeshObject) -> None:
         _, eigen_vectors = self._eigen_vectors(mesh)
         mesh.coordinates = np.dot(mesh.coordinates, eigen_vectors)
 
         return mesh
 
+    @recompute_normals
     def _flip_mass(self, mesh: MeshObject) -> None:
         centre_coordinates = mesh.cell_centers
         f = np.sign(np.sum(np.sign(centre_coordinates) * (centre_coordinates ** 2), axis=0))
@@ -107,9 +119,9 @@ class Pipeline:
 
         return mesh
 
+    @recompute_normals
     def normalize_shape(self, mesh: MeshObject) -> None:
         for component in list(self._pipeline_components.keys()):
             mesh = self._pipeline_components[component](mesh, **self.pipeline_parameters[component])
 
-        mesh = mesh.compute_normals()
         return mesh
