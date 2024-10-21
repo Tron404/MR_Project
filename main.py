@@ -6,7 +6,7 @@ import mesh_properties
 if __name__ == "__main__":
     pipeline_parameters = {
         "subdivision": {
-            "subdivision_type": "centroid",
+            "sampling_type": "centroid",
             "threshold": 5610
         }
     }

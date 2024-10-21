@@ -24,52 +24,45 @@ class MainWindow(QtWidgets.QMainWindow):
         self.layout.addLayout(button_layout)
         self.layout.addLayout(render_layout)
 
-        btn1 = QtWidgets.QPushButton("Normalize shape")
-        btn1.pressed.connect(self.normalize)
-
-
-        btn_subdivide_layout = QtWidgets.QHBoxLayout()
-        
-        btn_subdivide = QtWidgets.QPushButton("Subdivide")
-        btn_subdivide.pressed.connect(self.resample_shape)
-        btn_subdivide_layout.addWidget(btn_subdivide)
-
-        self.combo_box =  QtWidgets.QComboBox()
-        self.combo_box.addItems(["centroid", "linear","loop", "butterfly", "adaptive"])
-        btn_subdivide_layout.addWidget(self.combo_box)
-
-        btn3 = QtWidgets.QPushButton("Translate to\nbarycenter")
-        btn3.pressed.connect(self.translation_to_barycenter)
-        
-        btn4 = QtWidgets.QPushButton("Align to\nprincipal axes")
-        btn4.pressed.connect(self.align_to_axes)
-        
-        btn5 = QtWidgets.QPushButton("Flip shape")
-        btn5.pressed.connect(self.flip_mass)
-        
-        btn6 = QtWidgets.QPushButton("Scale shape")
-        btn6.pressed.connect(self.scale_mesh)
-
+        ##### render buttons
         btn_save = QtWidgets.QPushButton("Screenshot")
         btn_save.pressed.connect(self.save_screenshot)
 
+        btn_shader = QtWidgets.QPushButton("Shading", parent=self)
+        shader_menu = QtWidgets.QMenu(self)
+        shader_menu.addAction("Flat").triggered.connect(self.change_shading_to_flat)
+        shader_menu.addAction("Gouraud").triggered.connect(self.change_shading_to_gouraud)
+        shader_menu.addAction("Phong").triggered.connect(self.change_shading_to_phong)
+        btn_shader.setMenu(shader_menu)
+
+        ##### mesh transformation buttons 
+        btn1 = QtWidgets.QPushButton("Normalize shape")
+        btn1.pressed.connect(self.normalize)
+
+        btn_menu = QtWidgets.QPushButton("Normalization\nOperations", parent=self)
+        menu = QtWidgets.QMenu(self)
+        menu.addAction("Decimation").triggered.connect(partial(self.resample_shape, sampling_type="decimation"))
+
+        subdivision_types = ["centroid", "linear","loop", "butterfly", "adaptive"]
+        subdivision_menu = menu.addMenu("Subdivision")
+        for sub_type in subdivision_types:
+            subdivision_menu.addAction(sub_type.title()).triggered.connect(partial(self.resample_shape, sampling_type=sub_type))
+        
+        menu.addAction("Barycenter translation").triggered.connect(self.translation_to_barycenter)
+        menu.addAction("Principal axis alignment").triggered.connect(self.align_to_axes)
+        menu.addAction("Flip shape").triggered.connect(self.flip_mass)
+        menu.addAction("Scale shape").triggered.connect(self.scale_mesh)
+        btn_menu.setMenu(menu)
+
         btn1.setFixedSize(QtCore.QSize(250,50))
-        self.combo_box.setFixedSize(QtCore.QSize(150,50))
-        btn_subdivide.setFixedSize(QtCore.QSize(150,50))
-        btn3.setFixedSize(QtCore.QSize(250,50))
-        btn4.setFixedSize(QtCore.QSize(250,50))
-        btn5.setFixedSize(QtCore.QSize(250,50))
-        btn6.setFixedSize(QtCore.QSize(250,50))
         btn_save.setFixedSize(QtCore.QSize(250,50))
+        btn_menu.setFixedSize(QtCore.QSize(250,50))
+        btn_shader.setFixedSize(QtCore.QSize(250,50))
 
         button_layout.addWidget(btn1)
-        button_layout.addLayout(btn_subdivide_layout)
-        button_layout.addWidget(btn3)
-        button_layout.addWidget(btn4)
-        button_layout.addWidget(btn5)
-        button_layout.addWidget(btn6)
         button_layout.addWidget(btn_save)
-
+        button_layout.addWidget(btn_menu)
+        button_layout.addWidget(btn_shader)
 
         # create vedo renderer and add objects and callbacks
         self.vtkWidget = QVTKRenderWindowInteractor(self.frame)
@@ -91,6 +84,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.plt.show(self.face_text)
         self.show()
 
+    ##### mesh transformation funcs
     def _apply_transformation_on_shape(self, transformation, **kwargs):
         move_camera = kwargs.pop("move_camera", False)
         self.old_mesh = self.mesh_obj
@@ -102,10 +96,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def normalize(self):
         self._apply_transformation_on_shape(self.pipeline.normalize_shape, move_camera=True)
 
-    def resample_shape(self, subdivision_type="centroid"):
-        subdivision_type = self.combo_box.currentText()
-        print(subdivision_type)
-        self._apply_transformation_on_shape(self.pipeline._subdivide_shape, subdivision_type=subdivision_type)
+    def resample_shape(self, sampling_type="centroid"):
+        self._apply_transformation_on_shape(self.pipeline._resample_shape, sampling_type=sampling_type)
 
     def translation_to_barycenter(self):
         self._apply_transformation_on_shape(self.pipeline._translate_to_barycenter, move_camera=True)
@@ -119,6 +111,22 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def scale_mesh(self):
         self._apply_transformation_on_shape(self.pipeline._scale_mesh)
+
+    ###### render funcs
+    def _change_shading(self, interpolation_mode):
+        # 0=flat; 1=gouraud; 2=phong
+        self.mesh_obj = self.mesh_obj.compute_normals(cells=False, points=True)
+        self.mesh_obj.properties.SetInterpolation(interpolation_mode)
+        self.add_then_display()
+
+    def change_shading_to_flat(self):
+        self._change_shading(0)
+
+    def change_shading_to_gouraud(self):
+        self._change_shading(1)
+
+    def change_shading_to_phong(self):
+        self._change_shading(2)
 
     def load_mesh_from_path(self, url):
         class_name, file_name = url.split("/")[-2:]
@@ -176,7 +184,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.mesh = self.old_mesh
             self.add_then_display()
         
-
     def onClose(self):
         self.vtkWidget.close()
 
