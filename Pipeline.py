@@ -9,7 +9,7 @@ class Pipeline:
     def __init__(self, disable_components: list[str]=None, pipeline_parameters: dict={}) -> None:
         ## ORDER IS IMPORTANT
         self._pipeline_components = {
-            "subdivision": self._resample_shape,
+            "subdivision": self.resample_shape_pymeshlab,
             "barycenter_translation": self._translate_to_barycenter,
             "axis_alignment": self._align_to_principal_axes,
             "flip_moment": self._flip_mass,
@@ -39,63 +39,153 @@ class Pipeline:
             # first check if normal calculation is needed?
             mesh: MeshObject = transformation(*args, **kwargs)
             mesh = mesh.compute_normals()
-            # print(mesh.is_manifold())
             return mesh
         return normals
+    
+    def sanitize_nonmanifoldness_pymesh(self, pymesh_set):
+        operations_nonmanifoldness = [
+            partial(pymesh_set.meshing_repair_non_manifold_edges, method=0),
+            pymesh_set.meshing_repair_non_manifold_vertices,
+        ]
 
-    def _sanitize_mesh(self, vedo_mesh: MeshObject):
+        is_manifold = pymesh_set.get_topological_measures()["is_mesh_two_manifold"]
+        while not is_manifold:
+            for operation in operations_nonmanifoldness:
+                operation()
+            is_manifold = pymesh_set.get_topological_measures()["is_mesh_two_manifold"]
+
+        return pymesh_set
+
+    def sanitize_geometry_pymesh(self, pymesh_set):
+        def remove_disconnected_components(pymesh_set, nbfaceratio=0.05, ratio_selected_faces = 0.1): # elbow method?
+            pymesh_set.apply_filter("set_selection_all")
+            all_faces_num = pymesh_set.current_mesh().selected_face_number()
+            pymesh_set.set_selection_none()
+            pymesh_set.compute_selection_by_small_disconnected_components_per_face(nbfaceratio=nbfaceratio)
+            r = pymesh_set.current_mesh().selected_face_number()/all_faces_num
+            if r < ratio_selected_faces: # if too many, dont
+                pymesh_set.meshing_remove_selected_faces()
+            pymesh_set.set_selection_none()
+
+            return pymesh_set
+
+        operations_cleaning = [
+            pymesh_set.meshing_remove_duplicate_faces,
+            partial(remove_disconnected_components, pymesh_set, nbfaceratio=0.05),
+            pymesh_set.meshing_merge_close_vertices,
+        ]
+
+        for operation in operations_cleaning:
+            operation()
+
+        return pymesh_set
+
+    def sanitize_mesh_pymesh(self, pymesh_set):       
+        pymesh_set = self.sanitize_geometry_pymesh(pymesh_set)
+        is_manifold = pymesh_set.get_topological_measures()["is_mesh_two_manifold"]
+        if not is_manifold:
+            pymesh_set = self.sanitize_nonmanifoldness_pymesh(pymesh_set)
+
+        pymesh_set.meshing_close_holes(refinehole=True, refineholeedgelen=pymeshlab.PercentageValue(1), maxholesize=75)
+        pymesh_set.set_selection_none()
+        is_manifold = pymesh_set.get_topological_measures()["is_mesh_two_manifold"]
+        if not is_manifold:
+            pymesh_set = self.sanitize_nonmanifoldness_pymesh(pymesh_set)
+       
+        return pymesh_set
+    
+    def resample_shape_pymeshlab(self, vedo_mesh: MeshObject, sampling_type: str="butterfly", threshold: int=5610, decimation_type = "simple"):
         pymesh = vedo.utils.vedo2meshlab(vedo_mesh)
         pymesh_set = pymeshlab.MeshSet()
         pymesh_set.add_mesh(pymesh)
 
-        operations = [
-            pymesh_set.meshing_remove_duplicate_faces,
-            pymesh_set.meshing_remove_duplicate_vertices,
-            partial(pymesh_set.meshing_repair_non_manifold_edges, method=0),
-            pymesh_set.meshing_repair_non_manifold_vertices
-        ]
-        for operation in operations:
-            operation()
-
-        vedo_mesh = MeshObject(pymesh_set.current_mesh(), visualize=True)
-        vedo_mesh.fill_holes()
-
-        return vedo_mesh
-    
-    @recompute_normals
-    def _resample_shape(self, vedo_mesh: MeshObject, sampling_type: str="centroid", threshold: int=5610):
-        if not vedo_mesh.is_manifold():
-            vedo_mesh = self._sanitize_mesh(vedo_mesh)
-        
-        match sampling_type:
-            case "loop":
-                sampling_type = 0
-            case "linear":
-                sampling_type = 1
-            case "adaptive":
-                sampling_type = 2
-            case "butterfly":
-                sampling_type = 3
-            case "centroid":
-                sampling_type = 4
-            case "decimation":
-                sampling_type = -1
-            case "decimation_pro":
-                sampling_type = -2
-        if sampling_type != -1:
+        if pymesh_set.current_mesh().vertex_number() > threshold:
+            ### !!!! we dont need a manifold shape for decimation
             last_vertex_count = -1
-            while vedo_mesh.n_vertices < threshold:
-                vedo_mesh = vedo_mesh.subdivide(1, method=sampling_type)
-                if last_vertex_count == vedo_mesh.n_vertices:
+            prev_meshset = pymeshlab.MeshSet()
+            prev_meshset.add_mesh(pymesh_set.current_mesh())
+            while pymesh_set.current_mesh().vertex_number() > threshold:
+                pymesh_set.apply_filter("meshing_decimation_quadric_edge_collapse", targetperc=0.9, qualitythr=0.3, preserveboundary=True, preservetopology=True, planarquadric=True)
+                
+                if last_vertex_count == pymesh_set.current_mesh().vertex_number():
                     break
-                last_vertex_count = vedo_mesh.n_vertices
-        match sampling_type:
-            case -1:
-                vedo_mesh.decimate(fraction=0.5, n=threshold)
-            case -2:
-                vedo_mesh.decimate_pro(fraction=0.5, n=threshold)
+                last_vertex_count = pymesh_set.current_mesh().vertex_number()
 
-        return vedo_mesh
+            vedo_mesh = self.sanitize_mesh_pymesh(pymesh_set)
+
+            return MeshObject(pymesh_set.current_mesh(), visualize=True)
+        
+        vedo_mesh = self.sanitize_mesh_pymesh(pymesh_set)
+
+        # subdiv_method = partial(pymesh_set.apply_filter, filter_name="meshing_surface_subdivision_ls3_loop", loopweight=2, iterations=1)
+        # if pymesh_set.current_mesh().vertex_number() < 100: # low vertex shapes' topology is heavily modified by any loop-adjacent subdivision algo
+        subdiv_method = partial(pymesh_set.apply_filter, filter_name="meshing_surface_subdivision_midpoint", iterations=1)
+        ##### LS3 INTRODUCES NANs !!!!!!
+        ##### midpoint is vertex splitting, while ls3 loop is face splitting
+        last_vertex_count = -1
+        while pymesh_set.current_mesh().vertex_number() < threshold:
+            subdiv_method()
+            if last_vertex_count == pymesh_set.current_mesh().vertex_number():
+                break
+            last_vertex_count = pymesh_set.current_mesh().vertex_number()
+
+        last_vertex_count = -1
+        prev_meshset = pymeshlab.MeshSet()
+        prev_meshset.add_mesh(pymesh_set.current_mesh())
+        while pymesh_set.current_mesh().vertex_number() > threshold:
+            pymesh_set.apply_filter("meshing_decimation_quadric_edge_collapse", targetperc=0.9, qualitythr=0.3, preserveboundary=True, preservetopology=True, planarquadric=True)
+            if last_vertex_count == pymesh_set.current_mesh().vertex_number():
+                break
+            last_vertex_count = pymesh_set.current_mesh().vertex_number()
+
+        return MeshObject(pymesh_set.current_mesh(), visualize=True)
+
+    # def _sanitize_mesh(self, vedo_mesh: MeshObject):
+    #     pymesh = vedo.utils.vedo2meshlab(vedo_mesh)
+    #     pymesh_set = pymeshlab.MeshSet()
+    #     pymesh_set.add_mesh(pymesh)
+
+    #     operations = [
+    #         pymesh_set.meshing_remove_duplicate_faces,
+    #         pymesh_set.meshing_remove_duplicate_vertices,
+    #         partial(pymesh_set.meshing_repair_non_manifold_edges, method=0),
+    #         pymesh_set.meshing_repair_non_manifold_vertices
+    #     ]
+    #     for operation in operations:
+    #         operation()
+
+    #     vedo_mesh = MeshObject(pymesh_set.current_mesh(), visualize=True)
+    #     vedo_mesh.fill_holes()
+
+    #     return vedo_mesh
+    
+    # @recompute_normals
+    # def _resample_shape(self, vedo_mesh: MeshObject, sampling_type: str="adaptive", threshold: int=5610):
+    #     if not vedo_mesh.is_manifold():
+    #         vedo_mesh = self._sanitize_mesh(vedo_mesh)
+        
+    #     match sampling_type:
+    #         case "loop":
+    #             sampling_type = 0
+    #         case "linear":
+    #             sampling_type = 1
+    #         case "adaptive":
+    #             sampling_type = 2
+    #         case "butterfly":
+    #             sampling_type = 3
+    #         case "centroid":
+    #             sampling_type = 4  
+
+    #     last_vertex_count = -1
+    #     while vedo_mesh.n_vertices < threshold:
+    #         vedo_mesh = vedo_mesh.subdivide(1, method=sampling_type)
+    #         if last_vertex_count == vedo_mesh.n_vertices:
+    #             break
+    #         last_vertex_count = vedo_mesh.n_vertices
+   
+    #     vedo_mesh.decimate_pro(fraction=0.5, n=threshold) # preserve point data
+
+    #     return vedo_mesh
 
     def _translate_to_barycenter(self, mesh: MeshObject) -> MeshObject:
         bary_center = mesh.center_of_mass()

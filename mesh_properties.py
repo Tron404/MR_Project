@@ -26,10 +26,10 @@ def rectangularity(mesh_obj):
     y = abs(bb[3] - bb[2])
     z = abs(bb[5] - bb[4])
     bb_volume = x*y*z
-    return mesh_obj.volume / bb_volume
+    return (mesh_obj.volume() / bb_volume)
 
-def diameter(mesh_obj: MeshObject):
-    convex_hull = convexity(mesh_obj)
+def diameter(mesh_obj: MeshObject, return_points=False):
+    convex_hull = create_convex_hull(mesh_obj)
     max_distance = -1
     max_distance_points = (None, None)
     for point1_idx in range(0,len(convex_hull.vertices)):
@@ -38,12 +38,21 @@ def diameter(mesh_obj: MeshObject):
             if distance > max_distance:
                 max_distance = distance
                 max_distance_points = (convex_hull.vertices[point1_idx], convex_hull.vertices[point2_idx])
-    return max_distance, max_distance_points
+    if return_points:
+        return_items = max_distance, max_distance_points
+    else:
+        return_items = max_distance
+    return return_items
+
+def create_convex_hull(mesh_obj: MeshObject):
+    coordinates = mesh_obj.coordinates
+    convex_hull = ConvexHull(coordinates)
+    return convex_hull
 
 def convexity(mesh_obj: MeshObject):
     coordinates = mesh_obj.coordinates
     convex_hull = ConvexHull(coordinates)
-    return convex_hull
+    return mesh_obj.volume() / convex_hull.volume()
 
 def eccentricity(mesh_obj):
     eigenvalues, _ = Pipeline._eigen_vectors(None, mesh_obj)
@@ -102,7 +111,7 @@ def d4(p1, p2, p3, p4):
     p4 -= p1
     return np.cbrt(1/6 * abs(np.dot(np.cross(p2, p3),p4)))
 
-def shape_property_computation(mesh: MeshObject, num_samples=1):
+def shape_property_computation(mesh: MeshObject, num_samples=1, num_bins=25, return_unbinned=False):
     properties_map = {"d1": d1, 
                       "d2": d2, 
                       "d3": d3, 
@@ -116,6 +125,40 @@ def shape_property_computation(mesh: MeshObject, num_samples=1):
         for points in subsample_points:
             # print(points)
             feature_map[prop] += [func(*points)]
+        if return_unbinned:
+            feature_map[prop + "_unbinned"] = feature_map[prop]
+        feature_map[prop] = np.histogram(feature_map[prop], bins=num_bins-1)[1].tolist() # -1 bcs func returns bins+1 (i.e. limits of a bin)
 
     return feature_map
         
+########### feature vectors
+def compute_feature_vector(mesh: MeshObject, shape_property_kwargs: dict):
+    feature_vector = []
+    scalar_feature_computations = [
+        surface_area,
+        compactness,
+        rectangularity,
+        diameter,
+        convexity,
+        eccentricity,
+    ]
+
+    for f_computation in scalar_feature_computations:
+        feature = f_computation(mesh)
+        feature_vector += [feature]
+
+
+    return_unbinned = shape_property_kwargs["return_unbinned"]
+    shape_property_features = shape_property_computation(mesh, **shape_property_kwargs)
+    unbinned_features = {}
+    for feature_name, feature_values in shape_property_features.items():
+        if "unbinned" not in feature_name:
+            feature_vector += feature_values
+        if return_unbinned:
+            unbinned_features[feature_name] = feature_values
+
+    if return_unbinned:
+        return_items = np.asarray(feature_vector), unbinned_features
+    else:
+        return_items = np.asarray(feature_vector)
+    return return_items 
