@@ -9,10 +9,9 @@ from Pipeline import *
 # code based on example from vedo documentation on QT integration
 class TransformationGUI(QtCore.QObject):
     mesh_transformed = QtCore.Signal(object)
-    def __init__(self, mesh_obj: MeshObject, pipeline: Pipeline, parent=None):
+    def __init__(self, pipeline: Pipeline, parent=None):
         super().__init__(parent)
         self.button_layout = QtWidgets.QHBoxLayout()
-        self.mesh_obj = mesh_obj
         self.pipeline = pipeline
         self.parent = parent
 

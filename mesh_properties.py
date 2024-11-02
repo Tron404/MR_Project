@@ -127,7 +127,7 @@ def shape_property_computation(mesh: MeshObject, num_samples=1, num_bins=25, ret
             feature_map[prop] += [func(*points)]
         if return_unbinned:
             feature_map[prop + "_unbinned"] = feature_map[prop]
-        feature_map[prop] = np.histogram(feature_map[prop], bins=num_bins-1)[1].tolist() # -1 bcs func returns bins+1 (i.e. limits of a bin)
+        feature_map[prop] = np.histogram(feature_map[prop], bins=num_bins)[0].tolist() # return format V = bins(0), bin_edges(1)
 
     return feature_map
         

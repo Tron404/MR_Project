@@ -15,11 +15,10 @@ from tsne_plot import *
 
 # code based on example from vedo documentation on QT integration
 class RenderGUI(QtWidgets.QFrame):
-    def __init__(self, mesh_obj: MeshObject, pipeline: Pipeline, parent=None):
+    def __init__(self, parent=None):
         super().__init__()
         self.render_layout = QtWidgets.QStackedLayout()
         self.render_buttons_layout = QtWidgets.QHBoxLayout()
-        self.mesh_obj = mesh_obj
         self.parent = parent
 
         self.setAcceptDrops(True)
@@ -111,7 +110,7 @@ class RenderGUI(QtWidgets.QFrame):
     def load_mesh_from_path(self, url):
         self.plt.reset_camera()
         class_name, file_name = url.split("/")[-2:]
-        self.parent.mesh_obj = MeshObject(url, class_type=class_name, name=file_name)
+        self.parent.mesh_obj = MeshObject(url, class_type=class_name, name=file_name.removesuffix(".obj"))
         self.plt.fly_to(self.parent.mesh_obj.center_of_mass())
         if self.render_plot_stacked_widget.currentIndex() == 1: # tsne
             self.change_render()

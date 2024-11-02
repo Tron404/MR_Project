@@ -19,10 +19,9 @@ from retrieval_sep_gui import *
 
 # code based on example from vedo documentation on QT integration
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, mesh_obj: MeshObject, pipeline: Pipeline, parent=None):
+    def __init__(self, mesh_obj: MeshObject, pipeline: Pipeline, retriever: ShapeRetrieval, parent=None):
         QtWidgets.QMainWindow.__init__(self, parent)
 
-        # self.k = 5 # number of retrieved shapes
         self.frame = QtWidgets.QFrame()
         self.layout_all = QtWidgets.QVBoxLayout()
         self.button_layout_all = QtWidgets.QHBoxLayout()
@@ -30,9 +29,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.create_window()
         self.mesh_obj = mesh_obj
         self.pipeline = pipeline
-        self.render_gui = RenderGUI(self.mesh_obj, pipeline, self)
-        self.trans_gui = TransformationGUI(self.mesh_obj, pipeline, self)
-        self.retrieval_gui = RetrievalGUI(self.mesh_obj, pipeline, self)
+        self.render_gui = RenderGUI(self)
+        self.retrieval_gui = RetrievalGUI(retriever, self)
+        self.trans_gui = TransformationGUI(pipeline, self)
 
         self.button_layout_all.addLayout(self.trans_gui.button_layout)
         self.button_layout_all.addLayout(self.render_gui.render_buttons_layout)

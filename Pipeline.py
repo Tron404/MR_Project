@@ -36,7 +36,6 @@ class Pipeline:
     
     def recompute_normals(transformation):
         def normals(*args, **kwargs):
-            # first check if normal calculation is needed?
             mesh: MeshObject = transformation(*args, **kwargs)
             mesh = mesh.compute_normals()
             return mesh
@@ -86,7 +85,7 @@ class Pipeline:
         if not is_manifold:
             pymesh_set = self.sanitize_nonmanifoldness_pymesh(pymesh_set)
 
-        pymesh_set.meshing_close_holes(refinehole=True, refineholeedgelen=pymeshlab.PercentageValue(1), maxholesize=75)
+        pymesh_set.meshing_close_holes(refinehole=True, refineholeedgelen=pymeshlab.PercentageValue(1), maxholesize=25)
         pymesh_set.set_selection_none()
         is_manifold = pymesh_set.get_topological_measures()["is_mesh_two_manifold"]
         if not is_manifold:
@@ -94,6 +93,7 @@ class Pipeline:
        
         return pymesh_set
     
+    @recompute_normals
     def resample_shape_pymeshlab(self, vedo_mesh: MeshObject, sampling_type: str="butterfly", threshold: int=5610, decimation_type = "simple"):
         pymesh = vedo.utils.vedo2meshlab(vedo_mesh)
         pymesh_set = pymeshlab.MeshSet()

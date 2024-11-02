@@ -17,18 +17,13 @@ if __name__ == "__main__":
     # mesh.show()
 
     shape_property_args = {
-        "num_samples": 2500,
-        "num_bins": 50,
+        "num_samples": 10000,
+        "num_bins": 150,
         "return_unbinned": True
     }
-    feature_vectors = {
-        "obj_name": [],
-        "class_type": [],
-        "feature_vector": [],
-        "unbinned_shape_property": []
-    }
-    path = f"../ShapeDatabase_INFOMR"
-    path_features = f"../ShapeDatabase_INFOMR_features"
+
+    path = f"../ShapeDatabase_INFOMR_norm"
+    path_features = f"../ShapeDatabase_INFOMR_norm1_features"
     class_types = os.listdir(path)
     class_types = [class_type for class_type in class_types if os.path.isdir(path + "/" + class_type) and class_type != ".git"]
     replace_feature_file = False
@@ -45,10 +40,6 @@ if __name__ == "__main__":
             continue
         mesh = MeshObject(os.path.join(path_class, shape))
         f_vector, unbinned_shape_property = compute_feature_vector(mesh, shape_property_args)
-        feature_vectors["obj_name"] += [shape_name]
-        feature_vectors["class_type"] += [class_type]
-        feature_vectors["feature_vector"] += [f_vector]
-        feature_vectors["unbinned_shape_property"] += [unbinned_shape_property]
         feature_dict = {
             "obj_name": shape_name,
             "class_type": class_type,
