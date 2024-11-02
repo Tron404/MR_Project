@@ -2,7 +2,6 @@ shape_diag/
 cpp*
 *.cpp
 *.png
-*pickle
 *.csv
 /.venv
 env/
