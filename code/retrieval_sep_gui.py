@@ -15,18 +15,23 @@ from tsne_plot import *
 
 # code based on example from vedo documentation on QT integration
 class RetrievalGUI(QtWidgets.QFrame):
-    def __init__(self, retriever: ShapeRetrieval, parent=None):
+    def __init__(self, retriever: ShapeRetrieval, parent=None, plot_idx=0):
         super().__init__()
 
         # self.setStyleSheet("background-color: rgb(255,0,0); margin:5px; border:1px solid rgb(0, 255, 0); ")
 
         self.retriever = retriever
-        self.k = self.retriever.k # number of retrieved shapes
-        self.return_query = self.retriever.return_query
+        # self.k = self.retriever.k # number of retrieved shapes
+        # self.return_query = self.retriever.return_query
+        self.k = 6 # number of retrieved shapes
+        self.return_query = True
 
         self.retrieveal_layout = QtWidgets.QVBoxLayout()
         self.setLayout(self.retrieveal_layout)
-        self.parent = parent
+        self.setParent(parent)
+
+        self.plt_retrieval = self.parent().renderers
+        self.plot_idx = plot_idx
 
         ##### retrieval buttons
         retrieve_button = QtWidgets.QPushButton("Retrieve similar shapes")
@@ -35,30 +40,39 @@ class RetrievalGUI(QtWidgets.QFrame):
         self.retrieveal_layout.addWidget(retrieve_button)
 
         # ##### retrieval rendering
-        self.vtkWidget_retrieval = QVTKRenderWindowInteractor(self)
-        self.plt_retrieval = Plotter(qt_widget=self.vtkWidget_retrieval, shape=(1,self.k+int(self.return_query)), sharecam=False)
-        self.text_retrieval = Text2D("", pos="center")
-        for idx in range(self.k + self.return_query):
+        for idx in self.plot_idx:
+            self.text_retrieval = Text2D("", pos="center")
             self.plt_retrieval.at(idx)
             self.plt_retrieval.show(self.text_retrieval)
-        self.retrieveal_layout.addWidget(self.vtkWidget_retrieval)
-        self.vtkWidget_retrieval.hide()
 
         self.show()
 
     ##### retrieval funcs
     def retrieve_shapes(self):
-        retrieved_dict = self.retriever.find_similar_shapes(self.parent.mesh_obj.name, self.parent.mesh_obj.class_type, return_query=self.return_query)
-        for idx_plot, obj in zip(range(self.k+self.return_query), retrieved_dict): # include the query item as well
+        retrieved_dict = self.retriever.find_similar_shapes(self.parent().mesh_obj.name, self.parent().mesh_obj.class_type, return_query=self.return_query)
+        for idx_plot, obj in zip(self.plot_idx, retrieved_dict): # include the query item as well
             self.plt_retrieval.at(idx_plot)
             self.plt_retrieval.clear(deep=True)
             path = os.path.join(self.retriever.PATH, obj["class_type"], obj["obj_name"] + ".obj")
-            # print(path)
             text_str = f"class={obj['class_type']}\nname={obj['obj_name']}\ndist={round(obj['distance'],3)}"
             if self.return_query and idx_plot == 0: # == query item
                 text_str = "(query)\n" + text_str
-            text = Text2D(text_str)
+            text = Text2D(text_str, s=0.75)
             mesh = MeshObject(path, visualize=True)
+            self.plt_retrieval.at(idx_plot).zoom(4)
             self.plt_retrieval += [mesh, text]
-        self.vtkWidget_retrieval.show()
-        self.plt_retrieval.show()
+            self.plt_retrieval.show()
+
+    def onKeypress(self, evt):
+        printc("You have pressed key:", evt.keypress, c='b')
+        if evt.keypress=='q':
+            self.plt.close()
+            self.vtkWidget.close()
+            exit()
+        if evt.keypress=="Ctrl+z":
+            self.mesh = self.old_mesh
+            self.add_then_display()
+        if evt.keypress=="+":
+            self.plt.add_global_axes(axtype=(self.current_axis+1)%13)
+        if evt.keypress=="-":
+            self.plt.add_global_axes(axtype=(self.current_axis-1)%13)

@@ -13,18 +13,20 @@ from Pipeline import *
 from shapre_retrieval import *
 from tsne_plot import *
 from math import ceil
+from vtk import vtkRenderer
 
 # code based on example from vedo documentation on QT integration
 class RenderGUI(QtWidgets.QFrame):
     class_checked = QtCore.Signal((bool, str))
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, plot_idx=0):
         super().__init__()
         self.render_layout = QtWidgets.QVBoxLayout()
         self.render_buttons_layout = QtWidgets.QHBoxLayout()
-        self.parent = parent
+        self.setParent(parent)
 
         self.setAcceptDrops(True)
         self.setLayout(self.render_layout)
+        self.plot_idx = plot_idx
 
         ##### render buttons
         btn_save = QtWidgets.QPushButton("Screenshot", self)
@@ -44,19 +46,14 @@ class RenderGUI(QtWidgets.QFrame):
         self.render_buttons_layout.addWidget(btn_shader)
 
         ##### create vedo renderer and add objects and callbacks
-        self.render_plot_stacked_widget = QtWidgets.QStackedWidget()
-        self.vtkWidget = QVTKRenderWindowInteractor(self)
-        self.plt = Plotter(qt_widget=self.vtkWidget)
-        self.cbid = self.plt.add_callback("key press", self.onKeypress)
-        self.init_text = Text2D("Drag and drop a 3D mesh file to visualize it!", pos="center")
-        self.vertex_template = "Vertices={}"
-        self.face_template = "Faces={}"
-        self.vertex_text = Text2D(self.vertex_template, pos="top-right")
-        self.face_text = Text2D(self.face_template, pos="center-right")
-        self.face_text.SetPosition((0.994,0.9))
-        # self.render_layout.addWidget(self.vtkWidget)
+        self.render_plot_stacked_widget = QtWidgets.QStackedWidget(self)
+        
+        self.plt = self.parent().renderers
 
-        self.render_plot_stacked_widget.addWidget(self.vtkWidget)
+        self.init_text = Text2D("Drag and drop a 3D mesh file to visualize it!", pos="center")
+        self.info_text_template = "Vertices={}\nFaces={}\nClass={}\nName={}"
+        self.info_text = Text2D(self.info_text_template, pos="top-right")
+        self.info_text.SetPosition((0.994,0.9))
 
         ##### change between tsne and 3d render
         self.tsne_3d_render_btn = QtWidgets.QPushButton("Change to\nT-SNE Plot")
@@ -69,8 +66,9 @@ class RenderGUI(QtWidgets.QFrame):
         self.tsne_fig = FigureCanvasQTAgg(self.tsne_plot.plot.figure)
         self.tsne_fig.draw()
         self.tsne_plot.point_hovered.connect(self.load_mesh_from_path)
+        self.render_plot_stacked_widget.addWidget(self.parent().vtk)
         self.render_plot_stacked_widget.addWidget(self.tsne_fig)
-        ##### tsne checkbox options
+        # ##### tsne checkbox options
         self.class_checkboxes = []
         self.checked_boxes = 0
         self.checkbox_layout = QtWidgets.QGridLayout()
@@ -95,9 +93,8 @@ class RenderGUI(QtWidgets.QFrame):
         self.render_layout.addWidget(self.checkbox_widget)
         self.render_layout.addWidget(self.render_plot_stacked_widget)
 
-        self.plt.show(self.init_text)
-        self.plt.show(self.vertex_text)
-        self.plt.show(self.face_text)
+        self.plt.at(self.plot_idx).show(self.init_text)
+        self.plt.at(self.plot_idx).show(self.info_text)
 
     def block_unblock_unchecked_checkboxes(self, checkable=True):
         for checkbox in self.class_checkboxes:
@@ -132,12 +129,11 @@ class RenderGUI(QtWidgets.QFrame):
             self.tsne_3d_render_btn.setText("Change to\nT-SNE Plot")
             self.render_plot_stacked_widget.setCurrentIndex(0)
 
-
     ###### render funcs
     def _change_shading(self, interpolation_mode):
         # 0=flat; 1=gouraud; 2=phong
-        self.parent.mesh_obj = self.parent.mesh_obj.compute_normals(cells=False, points=True)
-        self.parent.mesh_obj.properties.SetInterpolation(interpolation_mode)
+        self.parent().mesh_obj = self.parent().mesh_obj.compute_normals(cells=False, points=True)
+        self.parent().mesh_obj.properties.SetInterpolation(interpolation_mode)
         self.add_then_display()
 
     def change_shading_to_flat(self):
@@ -150,40 +146,44 @@ class RenderGUI(QtWidgets.QFrame):
         self._change_shading(2)
 
     def change_camera(self):
-        self.plt.reset_camera()
-        self.plt.fly_to([0,0])
         self.add_then_display()
+        self.plt.at(self.plot_idx).reset_camera()
+        self.plt.at(self.plot_idx).zoom(4)
+        self.plt.at(self.plot_idx).fly_to([0,0])
 
     def load_mesh_from_path(self, url):
-        self.plt.reset_camera()
+        self.plt.at(self.plot_idx).reset_camera()
         class_name, file_name = url.split("/")[-2:]
-        self.parent.mesh_obj = MeshObject(url, class_type=class_name, name=file_name.removesuffix(".obj"))
-        self.plt.fly_to(self.parent.mesh_obj.center_of_mass())
-        # if self.render_plot_stacked_widget.currentIndex() == 1: # tsne
-        #     self.change_render()
+        self.parent().mesh_obj = MeshObject(url, class_type=class_name, name=file_name.removesuffix(".obj"))
+        self.plt.at(self.plot_idx).fly_to(self.parent().mesh_obj.center_of_mass())
+        if self.render_plot_stacked_widget.currentIndex() == 1: # tsne
+            self.change_render()
         self.add_then_display()
 
     def save_screenshot(self):
         self.init_text.off()
-        self.face_text.off()
-        self.vertex_text.off()
-        path = f"screenshots/{self.parent.mesh_obj.name}"
-        self.plt.screenshot(path, scale=5)
+        self.info_text.off()
+        path = f"screenshots/{self.parent().mesh_obj.name}"
+        self.plt.at(self.plot_idx).screenshot(path, scale=5)
         self.init_text.on()
-        self.face_text.on()
-        self.vertex_text.on()
+        self.info_text.on()
 
     def add_then_display(self):
+        self.plt.at(self.plot_idx).clear()
         self.init_text.pos("top-left")
-        self.vertex_text = self.vertex_text.text(self.vertex_template.format(self.parent.mesh_obj.n_vertices))
-        self.face_text = self.face_text.text(self.face_template.format(self.parent.mesh_obj.n_faces))
-        self.plt.clear()
-        self.plt.show(self.parent.mesh_obj) # build the vedo rendering
+        n_vertex = self.parent().mesh_obj.n_vertices
+        n_face = self.parent().mesh_obj.n_faces
+        class_type = self.parent().mesh_obj.class_type
+        name = self.parent().mesh_obj.name
+        self.info_text = self.info_text.text(self.info_text_template.format(n_vertex, n_face, class_type, name))
+        self.plt.at(self.plot_idx).show(self.parent().mesh_obj) # build the vedo rendering
 
     def onKeypress(self, evt):
+        self.vtkWidget.setFocus()
+
         printc("You have pressed key:", evt.keypress, c='b')
         if evt.keypress=='q':
-            self.plt.close()
+            self.plt.at(self.plot_idx).close()
             self.vtkWidget.close()
             exit()
         if evt.keypress=="Ctrl+z":

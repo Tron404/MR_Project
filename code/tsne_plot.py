@@ -48,6 +48,7 @@ class TSNEPlot(QtWidgets.QWidget):
     def load_tsne_data(self):
         self.fv_df = pd.read_pickle(f"{self.SHAPE_PATH_FEATURES}/feature_vector_df_normalized.pickle")
         self.class_types = list(self.fv_df["class_type"].unique())
+        self.class_types.sort()
         if "tsne_2d_components.pickle" not in os.listdir(self.SHAPE_PATH_FEATURES):
             warnings.warn("WARNING: No TSNE data found; creating, will take some time.")
             self.create_tsne_data()
