@@ -11,22 +11,32 @@ def volume(mesh_obj):
     vols = []
     for connected in mesh_obj.cells:
         triangle = mesh_obj.coordinates[connected]
-        volume = signed_volume_triangle(triangle)
-        vols += [volume]
+        v = signed_volume_triangle(triangle)
+        vols += [v]
     
-    volume = abs(sum(vols))
-    return volume
+    v = abs(sum(vols))
+    return v
+
+def signed_volume_triangle(triangle):
+    p1 = triangle[0]
+    p2 = triangle[1]
+    p3 = triangle[2]
+
+    vol = (1/6) * (np.dot(np.cross(p1,p2),p3))
+    return vol
 
 def compactness(mesh_obj):
-    return (surface_area(mesh_obj) ** 3) / (36 * np.pi * (volume(mesh_obj) ** 2))
+    up = surface_area(mesh_obj) ** 3
+    down = 36 * np.pi * (volume(mesh_obj) ** 2)
+    return 1/(up/down)
 
 def rectangularity(mesh_obj):
-    bb = mesh_obj.bounding_box
+    bb = mesh_obj.bounds()
     x = abs(bb[1] - bb[0])
     y = abs(bb[3] - bb[2])
     z = abs(bb[5] - bb[4])
     bb_volume = x*y*z
-    return (mesh_obj.volume() / bb_volume)
+    return (volume(mesh_obj) / bb_volume)
 
 def diameter(mesh_obj: MeshObject, return_points=False):
     convex_hull = create_convex_hull(mesh_obj)
@@ -59,21 +69,6 @@ def eccentricity(mesh_obj):
     eigenvalues = abs(eigenvalues)
     return eigenvalues[0] / eigenvalues[2]
 
-def signed_volume_triangle(triangle):
-    p1 = triangle[0]
-    p2 = triangle[1]
-    p3 = triangle[2]
-
-    vol321 = p3[0] * p2[1] * p1[2]
-    vol231 = p2[0] * p3[1] * p1[2]
-    vol312 = p3[0] * p1[1] * p2[2]
-    vol132 = p1[0] * p3[1] * p2[2]
-    vol213 = p2[0] * p1[1] * p3[2]
-    vol123 = p1[0] * p2[1] * p3[2]
-
-    vol = (1/6) * (-vol321 + vol231 + vol312 - vol132 - vol213 + vol123)
-    return vol
-
 ########### SHAPE-PROPERTY DESCRIPTORS
 
 """
@@ -83,6 +78,7 @@ p2       p3
    \  /
     p1
 """
+# bcs |a.b| = |a||b|cos; |axb| = |a||b|sin => sin/cos = (|a.b| . |a||b|) / (|axb| . |a||b|)
 def a3(p1, p2, p3, in_radians=True):
     diff_p2p1 = (p2 - p1)
     diff_p3p1 = (p3 - p1)
@@ -92,7 +88,7 @@ def a3(p1, p2, p3, in_radians=True):
     return angle
 
 def d1(p1): # double check!!!
-    return np.linalg.norm(np.zeros(p1.shape)-p1)
+    return np.linalg.norm(p1 - np.zeros(p1.shape))
 
 def d2(p1, p2):
     return np.linalg.norm(p2-p1)
@@ -100,8 +96,8 @@ def d2(p1, p2):
 def d3(p1, p2, p3): # normalized by sqrt
     p2 -= p1
     p3 -= p1
-    aux = np.cross(p2, p3)
-    return np.sqrt(np.dot(aux, aux)/2)
+    cross_p2p3 = np.cross(p2, p3)
+    return np.sqrt((1/2) * abs(np.linalg.norm(cross_p2p3)))
 
 # show diagram proof!
 def d4(p1, p2, p3, p4):
@@ -109,7 +105,7 @@ def d4(p1, p2, p3, p4):
     p2 -= p1
     p3 -= p1
     p4 -= p1
-    return np.cbrt(1/6 * abs(np.dot(np.cross(p2, p3),p4)))
+    return np.cbrt((1/6) * abs(np.dot(np.cross(p2, p3),p4)))
 
 def shape_property_computation(mesh: MeshObject, num_samples=1, num_bins=25, return_unbinned=False):
     properties_map = {"d1": d1, 

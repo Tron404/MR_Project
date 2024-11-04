@@ -14,7 +14,7 @@ if __name__ == "__main__":
     }
     retrieval_parameters = {
         "k": 5,
-        "num_bins": 150,
+        "num_bins": 75,
         "feature_weights": [0.5, 0.5, 0.2, 0.7, 0.4, 0.7, 0.2, 0.9, 0.9, 0.5, 0.7],
         "are_vectors_normalized": True,
         "distance_approach": "ann",

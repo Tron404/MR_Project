@@ -16,12 +16,12 @@ sns.set_theme(style="whitegrid")
 
 class TSNEPlot(QtWidgets.QWidget):
     point_hovered = QtCore.Signal(str)
-    def __init__(self, figsize, dpi):
+    def __init__(self, figsize, dpi, num_bins, feature_weights):
         super().__init__()
         self.SHAPE_PATH = "../ShapeDatabase_INFOMR_norm"
         self.SHAPE_PATH_FEATURES = "../ShapeDatabase_INFOMR_norm_features"
-        self.num_bins = 150
-        self.feature_weights = [0.5, 0.5, 0.2, 0.7, 0.4, 0.7, 0.2, 0.9, 0.9, 0.5, 0.7]
+        self.num_bins = num_bins
+        self.feature_weights = feature_weights
         self.dpi = dpi
         self.figsize = figsize
 
@@ -70,7 +70,7 @@ class TSNEPlot(QtWidgets.QWidget):
         self.class_labels = self.fv_df_aux.class_type.tolist()
 
         self.plot = sns.scatterplot(x=self.tsne_components[:,0][self.idx_aux], y=self.tsne_components[:,1][self.idx_aux], hue=self.class_labels, legend=True, palette=self.sns_colors)
-        plt.legend(loc="upper center", bbox_to_anchor = (0.5, 1.1), frameon=False, ncols=len(self.shown_classes)//2)
+        plt.legend(loc="upper center", bbox_to_anchor = (0.5, 1.15), frameon=False, ncols=len(self.shown_classes)//2)
 
         self.highlight_kwargs = dict(
             # color="red",
@@ -99,6 +99,7 @@ class TSNEPlot(QtWidgets.QWidget):
         )
         
         self.cursor_init()
+        plt.savefig("Plots/tsne_plot.png", transparent=True)
         self.plot.figure.canvas.draw()
 
     def cursor_init(self):

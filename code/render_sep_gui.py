@@ -61,7 +61,7 @@ class RenderGUI(QtWidgets.QFrame):
         self.render_buttons_layout.addWidget(self.tsne_3d_render_btn)
 
         ##### tsne representation
-        self.tsne_plot = TSNEPlot(figsize=(12,5), dpi=100) 
+        self.tsne_plot = TSNEPlot(figsize=(12,5), dpi=100, num_bins=self.parent().num_bins, feature_weights=self.parent().feature_weights) 
         self.class_checked.connect(self.tsne_plot.update_tsne_plot)
         self.tsne_fig = FigureCanvasQTAgg(self.tsne_plot.plot.figure)
         self.tsne_fig.draw()

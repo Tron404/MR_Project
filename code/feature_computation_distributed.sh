@@ -5,7 +5,7 @@ limit=0
 for folder in ${shape_folders[@]}; do
     path_file=$PATH_SHAPES"/"$folder
     if [ -d $path_file ] && [ $folder != ".git" ]; then
-        python shape_computation_distributed.py --shape_class $folder &
+        python feature_shape_computation_distributed.py --shape_class $folder &
         limit=$((limit+1))
     fi
     shape_list_len=${#shape_folders[@]}

@@ -22,8 +22,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.frame = QtWidgets.QFrame()
         self.layout_all = QtWidgets.QVBoxLayout()
         self.button_layout_all = QtWidgets.QHBoxLayout()
-        
-        k = 6
+        self.k = retriever.k
+        self.num_bins = retriever.num_bins
+        self.feature_weights = retriever.feature_weights
+
+        k = self.k + 1
         size = 1/k
         custom_shape = [dict(bottomleft=(0.0,size), topright=(1.00,1.00), bg='wheat', bg2=None )]# ren0
         for idx in range(k):
