@@ -18,7 +18,7 @@ if __name__ == "__main__":
     df = df[df["class"] == class_type]
 
     shape_path_orig = "../ShapeDatabase_INFOMR_orig"
-    pipeline = Pipeline(pipeline_parameters={"subdivide": {"threshold": 5610, "subdivision_type": "adaptive"}})
+    pipeline = Pipeline(pipeline_parameters={"subdivide": {"threshold": 5610}})
 
     new_path_shape = "../ShapeDatabase_INFOMR_norm"
     folder_name = os.path.join(new_path_shape, class_type)

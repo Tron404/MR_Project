@@ -93,7 +93,7 @@ class Pipeline:
        
         return pymesh_set
     
-    def resample_shape_pymeshlab(self, vedo_mesh: MeshObject, sampling_type: str="butterfly", threshold: int=5610, decimation_type = "simple"):
+    def resample_shape_pymeshlab(self, vedo_mesh: MeshObject, threshold: int=5610):
         pymesh = vedo.utils.vedo2meshlab(vedo_mesh)
         pymesh_set = pymeshlab.MeshSet()
         pymesh_set.add_mesh(pymesh)

@@ -42,6 +42,7 @@ class TransformationGUI(QtCore.QObject):
         self.mesh_transformed.emit(move_camera)
         
     def normalize(self):
+        print(self.parent().mesh_obj)
         self._apply_transformation_on_shape(self.pipeline.normalize_shape, move_camera=True)
 
     def resample_shape(self, sampling_type="centroid"):
