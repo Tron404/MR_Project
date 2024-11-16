@@ -62,7 +62,7 @@ def create_convex_hull(mesh_obj: MeshObject):
 def convexity(mesh_obj: MeshObject):
     coordinates = mesh_obj.coordinates
     convex_hull = ConvexHull(coordinates)
-    return mesh_obj.volume() / convex_hull.volume()
+    return volume(mesh_obj) / volume(convex_hull)
 
 def eccentricity(mesh_obj):
     eigenvalues, _ = Pipeline._eigen_vectors(None, mesh_obj)
@@ -97,7 +97,7 @@ def d3(p1, p2, p3): # normalized by sqrt
     p2 -= p1
     p3 -= p1
     cross_p2p3 = np.cross(p2, p3)
-    return np.sqrt((1/2) * abs(np.linalg.norm(cross_p2p3)))
+    return np.sqrt((1/2) * np.linalg.norm(cross_p2p3))
 
 # show diagram proof!
 def d4(p1, p2, p3, p4):

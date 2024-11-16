@@ -140,53 +140,6 @@ class Pipeline:
 
         return MeshObject(pymesh_set.current_mesh(), visualize=True)
 
-    # def _sanitize_mesh(self, vedo_mesh: MeshObject):
-    #     pymesh = vedo.utils.vedo2meshlab(vedo_mesh)
-    #     pymesh_set = pymeshlab.MeshSet()
-    #     pymesh_set.add_mesh(pymesh)
-
-    #     operations = [
-    #         pymesh_set.meshing_remove_duplicate_faces,
-    #         pymesh_set.meshing_remove_duplicate_vertices,
-    #         partial(pymesh_set.meshing_repair_non_manifold_edges, method=0),
-    #         pymesh_set.meshing_repair_non_manifold_vertices
-    #     ]
-    #     for operation in operations:
-    #         operation()
-
-    #     vedo_mesh = MeshObject(pymesh_set.current_mesh(), visualize=True)
-    #     vedo_mesh.fill_holes()
-
-    #     return vedo_mesh
-    
-    # @recompute_normals
-    # def _resample_shape(self, vedo_mesh: MeshObject, sampling_type: str="adaptive", threshold: int=5610):
-    #     if not vedo_mesh.is_manifold():
-    #         vedo_mesh = self._sanitize_mesh(vedo_mesh)
-        
-    #     match sampling_type:
-    #         case "loop":
-    #             sampling_type = 0
-    #         case "linear":
-    #             sampling_type = 1
-    #         case "adaptive":
-    #             sampling_type = 2
-    #         case "butterfly":
-    #             sampling_type = 3
-    #         case "centroid":
-    #             sampling_type = 4  
-
-    #     last_vertex_count = -1
-    #     while vedo_mesh.n_vertices < threshold:
-    #         vedo_mesh = vedo_mesh.subdivide(1, method=sampling_type)
-    #         if last_vertex_count == vedo_mesh.n_vertices:
-    #             break
-    #         last_vertex_count = vedo_mesh.n_vertices
-   
-    #     vedo_mesh.decimate_pro(fraction=0.5, n=threshold) # preserve point data
-
-    #     return vedo_mesh
-
     def _translate_to_barycenter(self, mesh: MeshObject) -> MeshObject:
         bary_center = mesh.center_of_mass()
         mesh.coordinates = mesh.coordinates - bary_center
@@ -223,14 +176,14 @@ class Pipeline:
 
         return e_vals, e_vectors
 
-    @recompute_normals
+    # @recompute_normals
     def _align_to_principal_axes(self, mesh: MeshObject) -> None:
         _, eigen_vectors = self._eigen_vectors(mesh)
         mesh.coordinates = np.dot(mesh.coordinates, eigen_vectors)
 
         return mesh
 
-    @recompute_normals
+    # @recompute_normals
     def _flip_mass(self, mesh: MeshObject) -> None:
         centre_coordinates = mesh.cell_centers
         f = np.sign(np.sum(np.sign(centre_coordinates) * (centre_coordinates ** 2), axis=0))
@@ -239,7 +192,7 @@ class Pipeline:
 
         mesh.coordinates = np.dot(mesh.coordinates, flip_transformation)
 
-        return mesh
+        return mesh, f
 
     @recompute_normals
     def normalize_shape(self, mesh: MeshObject) -> None:

@@ -99,7 +99,8 @@ class TSNEPlot(QtWidgets.QWidget):
         )
         
         self.cursor_init()
-        plt.savefig("Plots/tsne_plot.png", transparent=True)
+        if len(set(self.class_labels)) >= 12:
+            plt.savefig(f"Plots/tsne_plot_{''.join(set(self.class_labels))}.png", transparent=True)
         self.plot.figure.canvas.draw()
 
     def cursor_init(self):

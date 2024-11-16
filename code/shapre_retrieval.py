@@ -7,6 +7,8 @@ from pynndescent import NNDescent
 import warnings
 from functools import partial
 from sklearn.neighbors import KNeighborsClassifier
+import time
+from tqdm import tqdm
 
 class ShapeRetrieval:
     def __init__(self, num_bins, feature_weights, k=5, are_vectors_normalized=False, distance_approach="ann", return_query=False):
@@ -131,6 +133,7 @@ class ShapeRetrieval:
 
     def find_similar_shapes_nn_vector(self, query_mesh_fv, return_query=False):
         # for batch processing
+        start_time = time.time()
         return_query = int(not(return_query))
         neighbours_idx, neighbours_dist = None, None
         if len(query_mesh_fv.shape) < 2:
@@ -139,14 +142,14 @@ class ShapeRetrieval:
             case "ann":
                 neighbours_idx, neighbours_dist = self.ann_index.query(query_mesh_fv, k=self.k+1)
             case "knn":
-                neighbours_idx, neighbours_dist = self.knn.kneighbors(query_mesh_fv, n_neighbors=self.k+1)
+                neighbours_dist, neighbours_idx = self.knn.kneighbors(query_mesh_fv, n_neighbors=self.k+1)
 
-        if len(query_mesh_fv.shape) < 2:
+        if query_mesh_fv.shape[0] < 2:
             neighbours_idx, neighbours_dist = neighbours_idx[0][return_query:], neighbours_dist[0][return_query:] 
             dict_return = self.feature_df.loc[neighbours_idx]
             dict_return["distance"] = neighbours_dist
             
-            return dict_return.to_dict(orient="records")
+            return dict_return.to_dict(orient="records"), time.time() - start_time
         else:
             return_list = []
             for n_idx, n_dist in zip(neighbours_idx, neighbours_dist):
@@ -155,7 +158,7 @@ class ShapeRetrieval:
                 dict_return = self.feature_df.loc[n_idx]
                 dict_return["distance"] = n_dist
                 return_list += [dict_return.to_dict(orient="records")]
-            return return_list
+            return return_list, time.time() - start_time
 
     def find_similar_shapes_nn(self, obj_name, class_type, return_query=False):
         ## find the feature vector of the given shape
@@ -179,6 +182,27 @@ class ShapeRetrieval:
         print(dict_return)
 
         return dict_return.to_dict(orient="records")
+
+    def find_similar_shapes_manual_vector(self, query_mesh_fv, return_query=False):
+        feature_vectors = np.asarray(self.feature_df["feature_vector"].tolist())
+
+        dists = []
+        for vec in feature_vectors:
+            dists += [distance(query_mesh_fv, vec, num_bins=self.num_bins, feature_weights=self.feature_weights)]
+
+        dists_idx = np.argsort(dists)
+        retrieved_shapes_idx = np.argsort(dists_idx)[return_query:self.k+1]
+        aux_df = self.feature_df.loc[retrieved_shapes_idx]
+        aux_df["distance"] = np.sort(dists)[return_query:self.k+1]
+
+        return aux_df.to_dict(orient="records")
+    
+    def find_similar_shapes_manual_vector_list(self, query_mesh_fv, return_query=False):
+        return_list = []
+        start_time = time.time()
+        for query in tqdm(query_mesh_fv):
+            return_list += [self.find_similar_shapes_manual_vector(query, return_query=return_query)]
+        return return_list, time.time() - start_time
 
     def find_similar_shapes_manual(self, obj_name, return_query=False):
         return_query = int(not(return_query))

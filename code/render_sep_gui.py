@@ -164,7 +164,7 @@ class RenderGUI(QtWidgets.QFrame):
         self.init_text.off()
         self.info_text.off()
         path = f"screenshots/{self.parent().mesh_obj.name}"
-        self.plt.at(self.plot_idx).screenshot(path, scale=5)
+        self.plt.screenshot(path, scale=5)
         self.init_text.on()
         self.info_text.on()
 

@@ -5,26 +5,33 @@ from collections import defaultdict
 import pickle
 from tqdm import tqdm
 from argparse import ArgumentParser
+import time
+import os
 
 if __name__ == "__main__":
     argparser = ArgumentParser()
     argparser.add_argument("--k", type=int)
+    argparser.add_argument("--distance_approach", type=str)
     args = argparser.parse_args()
     k = args.k if args.k else 5
+    distance_approach = args.distance_approach if args.distance_approach else "ann"
     retrieval_parameters = {
             "k": k,
             "num_bins": 75,
             "feature_weights": [0.5, 0.5, 0.2, 0.7, 0.4, 0.7, 0.2, 0.9, 0.9, 0.5, 0.7],
             "are_vectors_normalized": True,
-            "distance_approach": "ann"
+            "distance_approach": distance_approach
         }
 
     retriever = ShapeRetrieval(**retrieval_parameters)
 
     feature_vector_queries = np.asarray(retriever.feature_df["feature_vector"].tolist())
-    similar_list = retriever.find_similar_shapes_nn_vector(feature_vector_queries, return_query=True)
+    if distance_approach == "manual":
+        retrieve_func = retriever.find_similar_shapes_manual_vector_list
+    else:
+        retrieve_func = retriever.find_similar_shapes_nn_vector
 
-    pickle.dump(similar_list, open("what.pickle", "wb"))
+    similar_list, query_time = retrieve_func(feature_vector_queries, return_query=True)
 
     class_performance = defaultdict(list)
     for idx_query, query in tqdm(enumerate(similar_list), total=len(similar_list)):
@@ -45,4 +52,6 @@ if __name__ == "__main__":
             "successes": successes
         }]
 
-    pickle.dump(class_performance, open(f"class_performance_top{k}.pickle", "wb"))
+    class_performance["time"] = query_time
+    os.makedirs(distance_approach, exist_ok=True)
+    pickle.dump(class_performance, open(f"{distance_approach}/class_performance_top{k}.pickle", "wb"))
