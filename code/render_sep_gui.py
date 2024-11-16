@@ -22,7 +22,7 @@ class RenderGUI(QtWidgets.QFrame):
         super().__init__()
         self.render_layout = QtWidgets.QVBoxLayout()
         self.render_buttons_layout = QtWidgets.QHBoxLayout()
-        self.setParent(parent)
+        self.parent = parent
 
         self.setAcceptDrops(True)
         self.setLayout(self.render_layout)
@@ -48,7 +48,7 @@ class RenderGUI(QtWidgets.QFrame):
         ##### create vedo renderer and add objects and callbacks
         self.render_plot_stacked_widget = QtWidgets.QStackedWidget(self)
         
-        self.plt = self.parent().renderers
+        self.plt = self.parent.renderers
 
         self.init_text = Text2D("Drag and drop a 3D mesh file to visualize it!", pos="center")
         self.info_text_template = "Vertices={}\nFaces={}\nClass={}\nName={}"
@@ -61,12 +61,12 @@ class RenderGUI(QtWidgets.QFrame):
         self.render_buttons_layout.addWidget(self.tsne_3d_render_btn)
 
         ##### tsne representation
-        self.tsne_plot = TSNEPlot(figsize=(12,5), dpi=100, num_bins=self.parent().num_bins, feature_weights=self.parent().feature_weights) 
+        self.tsne_plot = TSNEPlot(figsize=(12,5), dpi=100, num_bins=self.parent.num_bins, feature_weights=self.parent.feature_weights) 
         self.class_checked.connect(self.tsne_plot.update_tsne_plot)
         self.tsne_fig = FigureCanvasQTAgg(self.tsne_plot.plot.figure)
         self.tsne_fig.draw()
         self.tsne_plot.point_hovered.connect(self.load_mesh_from_path)
-        self.render_plot_stacked_widget.addWidget(self.parent().vtk)
+        self.render_plot_stacked_widget.addWidget(self.parent.vtk)
         self.render_plot_stacked_widget.addWidget(self.tsne_fig)
         # ##### tsne checkbox options
         self.class_checkboxes = []
@@ -132,8 +132,8 @@ class RenderGUI(QtWidgets.QFrame):
     ###### render funcs
     def _change_shading(self, interpolation_mode):
         # 0=flat; 1=gouraud; 2=phong
-        self.parent().mesh_obj = self.parent().mesh_obj.compute_normals(cells=False, points=True)
-        self.parent().mesh_obj.properties.SetInterpolation(interpolation_mode)
+        self.parent.mesh_obj = self.parent.mesh_obj.compute_normals(cells=False, points=True)
+        self.parent.mesh_obj.properties.SetInterpolation(interpolation_mode)
         self.add_then_display()
 
     def change_shading_to_flat(self):
@@ -154,8 +154,8 @@ class RenderGUI(QtWidgets.QFrame):
     def load_mesh_from_path(self, url):
         self.plt.at(self.plot_idx).reset_camera()
         class_name, file_name = url.split("/")[-2:]
-        self.parent().mesh_obj = MeshObject(url, class_type=class_name, name=file_name.removesuffix(".obj"))
-        self.plt.at(self.plot_idx).fly_to(self.parent().mesh_obj.center_of_mass())
+        self.parent.mesh_obj = MeshObject(url, class_type=class_name, name=file_name.removesuffix(".obj"))
+        self.plt.at(self.plot_idx).fly_to(self.parent.mesh_obj.center_of_mass())
         if self.render_plot_stacked_widget.currentIndex() == 1: # tsne
             self.change_render()
         self.add_then_display()
@@ -163,7 +163,7 @@ class RenderGUI(QtWidgets.QFrame):
     def save_screenshot(self):
         self.init_text.off()
         self.info_text.off()
-        path = f"screenshots/{self.parent().mesh_obj.name}"
+        path = f"screenshots/{self.parent.mesh_obj.name}"
         self.plt.screenshot(path, scale=5)
         self.init_text.on()
         self.info_text.on()
@@ -171,12 +171,12 @@ class RenderGUI(QtWidgets.QFrame):
     def add_then_display(self):
         self.plt.at(self.plot_idx).clear()
         self.init_text.pos("top-left")
-        n_vertex = self.parent().mesh_obj.n_vertices
-        n_face = self.parent().mesh_obj.n_faces
-        class_type = self.parent().mesh_obj.class_type
-        name = self.parent().mesh_obj.name
+        n_vertex = self.parent.mesh_obj.n_vertices
+        n_face = self.parent.mesh_obj.n_faces
+        class_type = self.parent.mesh_obj.class_type
+        name = self.parent.mesh_obj.name
         self.info_text = self.info_text.text(self.info_text_template.format(n_vertex, n_face, class_type, name))
-        self.plt.at(self.plot_idx).show(self.parent().mesh_obj) # build the vedo rendering
+        self.plt.at(self.plot_idx).show(self.parent.mesh_obj) # build the vedo rendering
 
     def onKeypress(self, evt):
         self.vtkWidget.setFocus()

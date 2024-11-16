@@ -22,7 +22,7 @@ class TransformationGUI(QtCore.QObject):
         self.btn_menu = QtWidgets.QPushButton("Normalization\nOperations")
         menu = QtWidgets.QMenu(self.btn_menu)
         
-        menu.addAction("Resample verties").triggered.connect(self.resample_shape)
+        menu.addAction("Resample vertices").triggered.connect(self.resample_shape)
         menu.addAction("Barycenter translation").triggered.connect(self.translation_to_barycenter)
         menu.addAction("Principal axis alignment").triggered.connect(self.align_to_axes)
         menu.addAction("Flip shape").triggered.connect(self.flip_mass)
@@ -42,16 +42,14 @@ class TransformationGUI(QtCore.QObject):
         self.mesh_transformed.emit(move_camera)
         
     def normalize(self):
-        print(self.parent().mesh_obj)
         self._apply_transformation_on_shape(self.pipeline.normalize_shape, move_camera=True)
 
-    def resample_shape(self, sampling_type="centroid"):
-        self._apply_transformation_on_shape(self.pipeline.resample_shape_pymeshlab, sampling_type=sampling_type)
+    def resample_shape(self):
+        self._apply_transformation_on_shape(self.pipeline.resample_shape_pymeshlab)
 
     def translation_to_barycenter(self):
         self._apply_transformation_on_shape(self.pipeline._translate_to_barycenter, move_camera=True)
     
-    ### create custom decorator for buttons?
     def align_to_axes(self):
         self._apply_transformation_on_shape(self.pipeline._align_to_principal_axes)
 

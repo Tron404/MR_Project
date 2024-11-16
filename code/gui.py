@@ -58,7 +58,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.layout_all.addWidget(self.render_gui)
         self.layout_all.addWidget(self.retrieval_gui)
 
-    
         self.frame.setLayout(self.layout_all)
         self.setCentralWidget(self.frame)
 
