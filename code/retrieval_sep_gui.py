@@ -28,9 +28,9 @@ class RetrievalGUI(QtWidgets.QFrame):
 
         self.retrieveal_layout = QtWidgets.QVBoxLayout()
         self.setLayout(self.retrieveal_layout)
-        self.setParent(parent)
+        self.parent = parent
 
-        self.plt_retrieval = self.parent().renderers
+        self.plt_retrieval = self.parent.renderers
         self.plot_idx = plot_idx
 
         ##### retrieval buttons
@@ -49,7 +49,7 @@ class RetrievalGUI(QtWidgets.QFrame):
 
     ##### retrieval funcs
     def retrieve_shapes(self):
-        retrieved_dict = self.retriever.find_similar_shapes(self.parent().mesh_obj.name, self.parent().mesh_obj.class_type, return_query=self.return_query)
+        retrieved_dict = self.retriever.find_similar_shapes(self.parent.mesh_obj.name, self.parent.mesh_obj.class_type, return_query=self.return_query)
         for idx_plot, obj in zip(self.plot_idx, retrieved_dict): # include the query item as well
             self.plt_retrieval.at(idx_plot)
             self.plt_retrieval.clear(deep=True)

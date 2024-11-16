@@ -94,6 +94,8 @@ class Pipeline:
         return pymesh_set
     
     def resample_shape_pymeshlab(self, vedo_mesh: MeshObject, threshold: int=5610):
+        vedo_mesh_name = vedo_mesh.name
+        vedo_mesh_class_type = vedo_mesh.class_type
         pymesh = vedo.utils.vedo2meshlab(vedo_mesh)
         pymesh_set = pymeshlab.MeshSet()
         pymesh_set.add_mesh(pymesh)
@@ -137,7 +139,7 @@ class Pipeline:
                 break
             last_vertex_count = pymesh_set.current_mesh().vertex_number()
 
-        return MeshObject(pymesh_set.current_mesh(), visualize=True)
+        return MeshObject(pymesh_set.current_mesh(), visualize=True, name=vedo_mesh_name, class_type=vedo_mesh_class_type)
 
     def _translate_to_barycenter(self, mesh: MeshObject) -> MeshObject:
         bary_center = mesh.center_of_mass()
