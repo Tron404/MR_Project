@@ -2,7 +2,7 @@
 
 Welcome to our project's repo! Below you will see instructions on how to set up and use our code.
 
-NB: We recently encountered a major bug stemming from Vedo and PySide6. For no reason, Meshes do not get updated for the processing GUI component, and as such any button that uses the normalization processes stopped working. Meshes can be vizualized and retrieval does work, it is just that manual normalization is broken. However, we have a separate script for normalization that works as expected, which can be run using 
+NB(SOLVED): We recently encountered a major bug stemming from Vedo and PySide6. For no reason, Meshes do not get updated for the processing GUI component, and as such any button that uses the normalization processes stopped working. Meshes can be vizualized and retrieval does work, it is just that manual normalization is broken. However, we have a separate script for normalization that works as expected, which can be run using 
 ```
 bash normalization_distributed.sh
 ```
