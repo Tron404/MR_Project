@@ -10,7 +10,7 @@ import vedo
 from MeshObject import *
 import os
 from Pipeline import *
-from shapre_retrieval import *
+from shape_retrieval import *
 from tsne_plot import *
 
 # code based on example from vedo documentation on QT integration

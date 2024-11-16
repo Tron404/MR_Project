@@ -93,7 +93,6 @@ class Pipeline:
        
         return pymesh_set
     
-    @recompute_normals
     def resample_shape_pymeshlab(self, vedo_mesh: MeshObject, sampling_type: str="butterfly", threshold: int=5610, decimation_type = "simple"):
         pymesh = vedo.utils.vedo2meshlab(vedo_mesh)
         pymesh_set = pymeshlab.MeshSet()
@@ -184,15 +183,18 @@ class Pipeline:
         return mesh
 
     # @recompute_normals
-    def _flip_mass(self, mesh: MeshObject) -> None:
+    def _flip_mass(self, mesh: MeshObject, return_sign=False) -> None:
         centre_coordinates = mesh.cell_centers
         f = np.sign(np.sum(np.sign(centre_coordinates) * (centre_coordinates ** 2), axis=0))
         flip_transformation = np.zeros((3,3))
         np.fill_diagonal(flip_transformation, f)
 
         mesh.coordinates = np.dot(mesh.coordinates, flip_transformation)
+        if return_sign:
+            return mesh, f
+        else:
+            return mesh
 
-        return mesh, f
 
     @recompute_normals
     def normalize_shape(self, mesh: MeshObject) -> None:

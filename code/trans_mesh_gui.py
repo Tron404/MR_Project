@@ -13,7 +13,7 @@ class TransformationGUI(QtCore.QObject):
         super().__init__(parent)
         self.button_layout = QtWidgets.QHBoxLayout()
         self.pipeline = pipeline
-        self.parent = parent
+        self.setParent(parent)
 
         ###### mesh transformation buttons 
         self.btn1 = QtWidgets.QPushButton("Normalize shape")
@@ -21,13 +21,8 @@ class TransformationGUI(QtCore.QObject):
 
         self.btn_menu = QtWidgets.QPushButton("Normalization\nOperations")
         menu = QtWidgets.QMenu(self.btn_menu)
-        menu.addAction("Decimation").triggered.connect(partial(self.resample_shape, sampling_type="decimation"))
-
-        subdivision_types = ["centroid", "linear","loop", "butterfly", "adaptive"]
-        subdivision_menu = menu.addMenu("Subdivision")
-        for sub_type in subdivision_types:
-            subdivision_menu.addAction(sub_type.title()).triggered.connect(partial(self.resample_shape, sampling_type=sub_type))
         
+        menu.addAction("Resample verties").triggered.connect(self.resample_shape)
         menu.addAction("Barycenter translation").triggered.connect(self.translation_to_barycenter)
         menu.addAction("Principal axis alignment").triggered.connect(self.align_to_axes)
         menu.addAction("Flip shape").triggered.connect(self.flip_mass)
@@ -43,14 +38,14 @@ class TransformationGUI(QtCore.QObject):
     ##### mesh transformation funcs
     def _apply_transformation_on_shape(self, transformation, **kwargs):
         move_camera = kwargs.pop("move_camera", False)
-        self.parent.mesh_obj = transformation(self.parent.mesh_obj, **kwargs)
+        self.parent().mesh_obj = transformation(self.parent().mesh_obj, **kwargs)
         self.mesh_transformed.emit(move_camera)
         
     def normalize(self):
         self._apply_transformation_on_shape(self.pipeline.normalize_shape, move_camera=True)
 
     def resample_shape(self, sampling_type="centroid"):
-        self._apply_transformation_on_shape(self.pipeline._resample_shape, sampling_type=sampling_type)
+        self._apply_transformation_on_shape(self.pipeline.resample_shape_pymeshlab, sampling_type=sampling_type)
 
     def translation_to_barycenter(self):
         self._apply_transformation_on_shape(self.pipeline._translate_to_barycenter, move_camera=True)

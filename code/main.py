@@ -3,12 +3,11 @@ from PySide6.QtWidgets import QApplication
 from MeshObject import MeshObject
 from Pipeline import Pipeline
 import sys
-from shapre_retrieval import ShapeRetrieval
+from shape_retrieval import ShapeRetrieval
 
 if __name__ == "__main__":
     pipeline_parameters = {
         "subdivision": {
-            "sampling_type": "centroid",
             "threshold": 5610
         }
     }

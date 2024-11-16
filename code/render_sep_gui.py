@@ -10,7 +10,7 @@ import vedo
 from MeshObject import *
 import os
 from Pipeline import *
-from shapre_retrieval import *
+from shape_retrieval import *
 from tsne_plot import *
 from math import ceil
 from vtk import vtkRenderer

@@ -4,7 +4,7 @@ matplotlib.use('Qt5Agg')
 from PySide6 import QtWidgets
 from MeshObject import MeshObject
 from Pipeline import Pipeline
-from shapre_retrieval import ShapeRetrieval
+from shape_retrieval import ShapeRetrieval
 
 from render_sep_gui import RenderGUI
 from trans_mesh_gui import TransformationGUI

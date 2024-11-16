@@ -1,4 +1,4 @@
-from shapre_retrieval import ShapeRetrieval
+from shape_retrieval import ShapeRetrieval
 import numpy as np
 import pandas as pd
 from collections import defaultdict
